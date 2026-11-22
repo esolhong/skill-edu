@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>PLC COM 결선과 측정</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* 레이아웃: 제어반 도면. 한 줄 규칙 → 결선 시뮬레이터(배선 시뮬레이터와 같은 결선·표기) → 측정표 → 보충 → 체크리스트 → 평가 */
+:root{
+  --bg:#eef0ee; --panel:#f9faf9; --fg:#1d2422; --muted:#5b6662; --line:#c9cfcc;
+  --accent:#d9a400; --accent-ink:#2a2200;
+  --p24:#d23a2c; --g24:#2a63c9; --live:#9a5a22; --neu:#2a63c9; --float:#9aa39f; --pe:#1f8a4c;
+  --ok:#1f8a4c; --bad:#c0392b; --lamp:#ffcc33; --lcd:#c9d6b8; --lcd-ink:#18200f;
+  --f-display:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151a19;--panel:#1d2423;--fg:#e6ebe8;--muted:#9aa7a2;--line:#34403d;--accent:#f2c230;--accent-ink:#1a1500;
+  --p24:#ff6b5c;--g24:#6d9dff;--live:#d99355;--neu:#6d9dff;--float:#6c7773;--pe:#4cc27e;--ok:#4cc27e;--bad:#ff7a6b;--lamp:#ffd54d;--lcd:#2c3824;--lcd-ink:#d8f0b8;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151a19;--panel:#1d2423;--fg:#e6ebe8;--muted:#9aa7a2;--line:#34403d;--accent:#f2c230;--accent-ink:#1a1500;
+  --p24:#ff6b5c;--g24:#6d9dff;--live:#d99355;--neu:#6d9dff;--float:#6c7773;--pe:#4cc27e;--ok:#4cc27e;--bad:#ff7a6b;--lamp:#ffd54d;--lcd:#2c3824;--lcd-ink:#d8f0b8;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:clamp(28px,5vw,42px)} h2{font-size:clamp(22px,3.4vw,28px)} h3{font-size:18px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.prose{max-width:70ch;display:flex;flex-direction:column;gap:12px}
+.mono{font-family:var(--f-mono)}
+section{display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+header .lead{font-size:18px;color:var(--muted);max-width:64ch}
+.tag{align-self:flex-start;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13px;padding:2px 10px;border-radius:3px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.rule{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rule .big{font-family:var(--f-display);font-size:21px;font-weight:700;line-height:1.5}
+.rule .why{color:var(--muted);font-size:15px}
+.chip{display:inline-block;font-family:var(--f-mono);font-size:13px;font-weight:700;padding:1px 8px;border-radius:3px;color:#fff;vertical-align:2px}
+.c-p24{background:var(--p24)}.c-g24{background:var(--g24)}.c-l{background:var(--live)}.c-n{background:var(--neu)}
+.sim{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.toolbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.tbtn{font:inherit;font-size:14px;font-weight:700;background:#fbeaa6;color:#2a2200;border:1px solid #c9a52a;border-radius:4px;padding:9px 10px;cursor:pointer}
+.tbtn small{display:block;font-weight:400;font-size:12px;color:#5a4a10}
+.controls{display:flex;flex-wrap:wrap;gap:12px 24px}
+.ctl{display:flex;flex-direction:column;gap:6px}
+.ctl .lbl{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:inherit;font-size:14px;background:transparent;color:var(--fg);border:0;padding:7px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:700}
+.seg button:focus-visible,.btn:focus-visible,.tbtn:focus-visible,.hit:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
+@media (max-width:820px){.stage{grid-template-columns:minmax(0,1fr)}}
+.svgbox{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.svgbox svg{display:block;width:100%;min-width:720px;height:auto}
+.hint{font-size:13px;color:var(--muted)}
+.meter{background:#2b2f2e;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;color:#e8ece9}
+.meter .lcd{background:var(--lcd);color:var(--lcd-ink);font-family:var(--f-mono);font-weight:700;font-size:38px;text-align:right;padding:8px 12px;border-radius:6px;font-variant-numeric:tabular-nums;line-height:1.1}
+.meter .lcd small{font-size:15px;margin-left:4px}
+.meter .probes{font-size:13px;display:flex;flex-direction:column;gap:2px}
+.meter .mode{font-size:12px;color:#b8c0bc}
+.pr{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.verdict{border-left:4px solid var(--muted);padding:10px 14px;background:var(--bg);border-radius:0 6px 6px 0;font-size:15px;min-width:0}
+.verdict.good{border-color:var(--ok)}.verdict.warn{border-color:var(--accent)}.verdict.bad{border-color:var(--bad)}
+.verdict b{display:block;margin-bottom:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.w{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.flow{fill:none;stroke-dasharray:5 9;animation:flow .8s linear infinite;stroke-width:1.6;stroke:var(--fg);opacity:.7}
+@keyframes flow{to{stroke-dashoffset:-14}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+.box{fill:var(--panel);stroke:var(--fg);stroke-width:1.5}
+.t{fill:var(--fg);font-family:var(--f-body);font-size:13px}
+.tl{fill:var(--fg);font-family:var(--f-mono);font-size:12px;font-weight:700}
+.ts{fill:var(--muted);font-family:var(--f-body);font-size:10px}
+.tp{fill:var(--panel);stroke:var(--fg);stroke-width:1.3}
+.hit{fill:transparent;cursor:pointer}
+.hit:hover+.hov,.hov:hover{stroke:var(--accent)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:600px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted)}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.note{border-top:3px solid var(--fg);padding-top:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.note.fix{border-color:var(--accent)}
+.note p{font-size:15px}
+.check{display:flex;flex-direction:column;gap:20px}
+.check fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.check legend{font-weight:700;font-family:var(--f-display);margin-bottom:6px}
+.check label{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer;flex-wrap:wrap}
+.check input[type=checkbox]{margin-top:5px;width:18px;height:18px;accent-color:var(--fg);flex:none}
+.check input:checked+span{color:var(--muted);text-decoration:line-through}
+.check label>span{flex:1;min-width:0}
+.rec input{width:76px;font:inherit;font-family:var(--f-mono);padding:2px 6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:4px}
+.btn{align-self:flex-start;font:inherit;font-size:14px;font-weight:700;border:1px solid var(--fg);background:transparent;color:var(--fg);padding:6px 14px;border-radius:5px;cursor:pointer}
+.quiz{display:flex;flex-direction:column;gap:18px}
+.q{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.q .stem{font-weight:500}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opts button{font:inherit;font-size:15px;text-align:left;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:8px 12px;cursor:pointer}
+.opts button.right{border-color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)}
+.opts button.wrong{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+.opts button:disabled{cursor:default}
+.exp{font-size:14px;color:var(--muted)}
+.score{font-family:var(--f-mono);font-weight:700}
+footer{color:var(--muted);font-size:13px}
+</style>
+
+</head><body>
+<nav style="max-width:1080px;margin:0 auto 16px;font-size:14px"><a href="../../" style="color:inherit">← 전체 목차</a></nav>
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">전기기능장 PLC · 입출력 결선과 테스터 점검</span>
+  <h1>COM은 어디에 물려야 측정이 쉬울까?</h1>
+  <p class="lead">입력 COM은 24V와 24G 중 어디에, 출력 COM0~COM3은 F1-1(L1)과 F1-2(L3) 중 어디에 연결할까요? 기준은 하나입니다. 신호가 ON 되면 <b>전압이 신호 단자로 들어오고(입력), 나가게(출력)</b> 결선하면 테스터 한 번으로 판정할 수 있습니다.</p>
+</header>
+
+<section class="rules" aria-label="한 줄 규칙">
+  <div class="rule">
+    <span class="tag">입력</span>
+    <div class="big">COM ← <span class="chip c-g24">24G</span> 점퍼<br>스위치 공통선 ← <span class="chip c-p24">24V</span></div>
+    <p class="why">스위치를 누르면 I 단자로 24V가 들어옵니다. 테스터 흑색을 24G에 두고 재면 OFF 0V, ON 24V로 바로 읽힙니다.</p>
+  </div>
+  <div class="rule">
+    <span class="tag">출력</span>
+    <div class="big">COM0~COM3 ← <span class="chip c-l">F1-1(L1)</span> 전원 L측<br>램프 공통 PN ← <span class="chip c-n">F1-2(L3)</span> N측</div>
+    <p class="why">출력이 ON 되면 Q 단자로 220V가 나갑니다. 흑색은 램프 공통 PN에 고정하고 재면 ON 220V, OFF 0V입니다.</p>
+  </div>
+</section>
+
+<!-- ============ SIMULATOR ============ -->
+<section aria-labelledby="sim-h">
+  <div class="prose">
+    <span class="eyebrow">결선 시뮬레이터</span>
+    <h2 id="sim-h">스위치를 누르고, 테스트 포인트를 찍어 보세요</h2>
+    <p>배선 시뮬레이터의 PLC 연결부와 같은 결선·표기입니다. 처음 화면은 그 시뮬레이터의 최신 결선(입력 COM=24G, 출력 COM0~3=F1-2(L3), 램프 공통 PN=F1-1(L1))과 같습니다. 스위치를 눌러 측정한 뒤 <b>입력전원 바꾸기</b>, <b>출력전원 바꾸기</b>로 바꿔서 다시 재 보세요.</p>
+  </div>
+  <div class="sim">
+    <div class="toolbar">
+      <button class="tbtn" id="bIn" type="button">입력전원 바꾸기<small id="bInS"></small></button>
+      <button class="tbtn" id="bOrd" type="button">입력순서 바꾸기<small id="bOrdS"></small></button>
+      <button class="tbtn" id="bOut" type="button">출력전원 바꾸기<small id="bOutS"></small></button>
+      <button class="tbtn" id="bLbl" type="button">출력 표기 (PLC 기종)<small id="bLblS"></small></button>
+    </div>
+    <div class="controls">
+      <div class="ctl"><span class="lbl">테스터 흑색(−) 위치</span>
+        <div class="seg" id="ref"><button data-v="24G" aria-pressed="true">PLC 24G</button><button data-v="COM" aria-pressed="false">입력 COM</button><button data-v="PN" aria-pressed="false">램프 공통 PN</button><button data-v="L3" aria-pressed="false">F1-2(L3)</button><button data-v="COM0" aria-pressed="false">출력 COM0</button></div></div>
+      <div class="ctl"><span class="lbl">테스터 종류</span>
+        <div class="seg" id="mtr"><button data-v="hiz" aria-pressed="true">일반 디지털 (10MΩ)</button><button data-v="loz" aria-pressed="false">LoZ (저임피던스)</button></div></div>
+    </div>
+    <div class="stage">
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+        <div class="svgbox"><svg id="svg" viewBox="0 0 860 400" role="img" aria-label="PLC 입출력 결선도"></svg></div>
+        <p class="hint">스위치 클릭: ON/OFF · 동그란 테스트 포인트(I00, Q00…) 클릭: 적색 리드 이동 · 램프 클릭: 단선 만들기/복구 · 시험 프로그램: 입력 n번 → 출력 n번 (I00→Q00 … I04→Q04)</p>
+      </div>
+      <div class="meter" aria-live="polite">
+        <div class="mode" id="mMode">DC V</div>
+        <div class="lcd" id="lcd">0.0<small>V</small></div>
+        <div class="probes"><span id="pRed"></span><span id="pBlk"></span></div>
+        <div class="mode" id="mState"></div>
+      </div>
+    </div>
+    <div class="legend"><span style="--c:var(--p24)">24V 전위</span><span style="--c:var(--g24)">24G(0V) 전위</span><span style="--c:var(--live)">L1 전위</span><span style="--c:var(--neu)">L3 전위 (측정 기준 0V)</span><span style="--c:var(--float)">떠 있는 선</span></div>
+    <div class="status">
+      <div class="verdict" id="vIn"></div>
+      <div class="verdict" id="vOut"></div>
+    </div>
+    <div class="verdict" id="vMeas"></div>
+  </div>
+</section>
+
+<!-- ============ TABLE ============ -->
+<section aria-labelledby="tbl-h">
+  <h2 id="tbl-h">측정값 한눈에 보기</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>결선</th><th>테스터 (적 / 흑)</th><th>OFF</th><th>ON</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>입력 COM=24G, 스위치 공통 24V</td><td>I00 / 24G</td><td class="num">0 V</td><td class="num">24 V</td><td>누르면 24V, 직관적 (권장)</td></tr>
+      <tr><td>입력 COM=24V, 스위치 공통 24G</td><td>I00 / 24G</td><td class="num">≈24 V</td><td class="num">0 V</td><td>동작은 정상, 측정은 거꾸로 읽힘</td></tr>
+      <tr><td>출력 COM=F1-1(L1), PN=F1-2(L3)</td><td>Q00 / PN(=L3)</td><td class="num">0 V</td><td class="num">220 V</td><td>ON이면 220V, 램프 고장도 바로 구분 (권장)</td></tr>
+      <tr><td>출력 COM=F1-2(L3), PN=F1-1(L1)</td><td>Q00 / F1-2(L3)</td><td class="num">220 V</td><td class="num">0 V</td><td>꺼져 있는데 220V, 오판하기 쉬움</td></tr>
+      <tr><td>출력 COM=F1-2(L3), PN=F1-1(L1)</td><td>Q00 / PN(=L1)</td><td class="num">0 V</td><td class="num">220 V</td><td>흑색을 PN에 두면 정상 판독</td></tr>
+      <tr><td>출력 OFF, 램프 단선</td><td>Q00 / PN, 일반 테스터</td><td class="num">수십 V</td><td class="num">COM 전위</td><td>OFF의 수십 V는 유도(허상)전압, LoZ로 사라짐</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ NOTES ============ -->
+<section aria-labelledby="note-h">
+  <div class="prose"><span class="eyebrow">더 알아두기</span><h2 id="note-h">측정 편의 말고도 알아둘 것</h2></div>
+  <div class="notes">
+    <div class="note"><h3>양방향 포토커플러라 극성 무관</h3><p>입력부의 포토커플러는 LED 두 개가 서로 반대 방향으로 붙어 있어서(데이터시트 명칭 "AC 입력형") 전류가 어느 쪽으로 흐르든 켜집니다. 그래서 COM을 24V에 두든 24G에 두든 입력은 동작합니다. 결선 방향은 "측정과 안전"으로 고릅니다.</p></div>
+    <div class="note"><h3>입력·출력은 서로 절연</h3><p>입력은 포토커플러(빛), 출력은 릴레이(코일과 접점 사이 절연)로 PLC 내부 회로와 분리되어 있습니다. 그래서 입력은 DC 24V, 출력은 AC 220V로 전원이 완전히 따로입니다. 테스터 두 리드는 항상 같은 회로 안에서 대야 의미 있는 값이 나옵니다(입력은 24G 기준, 출력은 램프 공통 PN 기준).</p></div>
+    <div class="note"><h3>입력: 지락에도 안전한 쪽</h3><p>24G를 외함(접지)에 묶은 제어반에서 COM=24G 결선은 입력선이 외함에 닿아도 입력이 OFF로 떨어지거나 퓨즈가 동작합니다. COM=24V 결선은 입력선이 외함에 닿는 순간 버튼을 안 눌렀는데 입력이 ON 될 수 있습니다.</p></div>
+    <div class="note"><h3>센서는 예외가 있다</h3><p>NPN 출력 근접센서는 신호선을 0V로 끌어내리므로 COM을 <b>24V</b>에, PNP 센서는 신호선에 24V를 내보내므로 COM을 <b>24G</b>에 연결합니다. 같은 COM을 쓰는 입력끼리는 한 방식으로 통일합니다.</p></div>
+    <div class="note fix"><h3>"AC 입력형"이라는 이름에 주의</h3><p>"AC 입력형"은 양방향 전류를 받는다는 뜻이고 입력 정격은 <b>DC 24V</b>입니다. 입력 단자에 AC 220V를 넣으면 소손됩니다. 모든 PLC가 양방향 입력은 아니므로 기종 사양서에서 싱크/소스 겸용인지 먼저 확인합니다.</p></div>
+    <div class="note fix"><h3>"허상전압"은 두 종류</h3><p>출력 COM=L3에서 OFF일 때 보이는 220V는 램프를 거쳐 온 <b>진짜 L1 전위</b>이고, LoZ로 재도 남습니다. 램프가 빠져 선이 떠 있을 때 보이는 수십 V는 옆 전선에서 정전용량으로 옮아온 <b>유도전압</b>이고, LoZ 테스터나 부하를 연결하고 재면 사라집니다.</p></div>
+    <div class="note fix"><h3>L1·L3 전원이면 양쪽 다 충전부</h3><p>이 결선은 F1-1(L1)과 F1-2(L3) 두 상에서 220V를 받습니다. 이때는 N선처럼 대지전압이 0인 선이 없으므로 출력이 OFF여도 램프 한쪽 끝은 항상 충전 상태입니다. 램프 교체·결선 변경은 반드시 F1을 내리고 합니다. 단상 L–N 전원이라면 COM을 L에 두어야 OFF 때 램프가 무전압이 됩니다. 두 상 전원에서는 "흑색은 램프 공통 PN"을 습관으로 만드는 것이 가장 확실합니다.</p></div>
+    <div class="note"><h3>COM 그룹과 정격</h3><p>DR20SU처럼 COM0~COM3로 나뉜 기종은 점퍼로 묶으면 한 전원, 떼면 그룹별로 다른 전압을 쓸 수 있습니다. 점당·COM당 전류 정격(사양서 확인)을 넘지 않게 하고, 전자접촉기 코일 같은 유도성 부하에는 서지 흡수기를 붙입니다.</p></div>
+    <div class="note"><h3>FG는 PE에</h3><p>FG 단자는 PE(접지)에 연결합니다. 노이즈 대책이자 외함 감전 보호를 위한 것으로, 24G나 L3와는 별개입니다.</p></div>
+  </div>
+</section>
+
+<!-- ============ CHECKLIST ============ -->
+<section aria-labelledby="chk-h">
+  <div class="prose"><span class="eyebrow">실습</span><h2 id="chk-h">실습 체크리스트</h2><p>체크 표시와 기록은 이 브라우저에만 저장됩니다.</p></div>
+  <div class="sim check" id="checklist">
+    <fieldset><legend>1. 준비</legend>
+      <label><input type="checkbox" id="c1"><span>PLC 사양서에서 입력 정격(DC 24V, 싱크/소스 겸용 여부)을 확인했다</span></label>
+      <label><input type="checkbox" id="c2"><span>릴레이 출력 정격과 COM 그룹(Q00~Q04가 어느 COM을 쓰는지)을 확인했다</span></label>
+      <label><input type="checkbox" id="c3"><span>F1(F1-1, F1-2)을 내린 상태에서 결선을 시작한다. 테스터는 CAT Ⅲ 이상, 리드선 피복 이상 없음</span></label>
+    </fieldset>
+    <fieldset><legend>2. 입력 결선과 측정</legend>
+      <label><input type="checkbox" id="c4"><span>24G–COM 점퍼, 24V → 스위치 공통선 → SS_A~C, PB_A~C → I00~I05 로 결선했다</span></label>
+      <label><input type="checkbox" id="c5"><span>전원 투입 전 저항 레인지로 24V–24G 사이가 단락이 아님을 확인했다</span></label>
+      <label><input type="checkbox" id="c6"><span>흑색 24G 고정, 적색 I00~I05: 스위치 OFF <span class="mono">0V</span>, ON <span class="mono">24V</span> 측정</span></label>
+      <label><input type="checkbox" id="c7"><span>입력 LED와 래더 모니터에서 해당 입력 ON을 확인했다</span></label>
+    </fieldset>
+    <fieldset><legend>3. 출력 결선과 측정</legend>
+      <label><input type="checkbox" id="c8"><span>F1을 내린 뒤 COM0~COM3 점퍼 → F1-1(L1), Q00~Q04 → PL_A~E → 램프 공통 PN → F1-2(L3), FG → PE 결선</span></label>
+      <label><input type="checkbox" id="c9"><span>흑색 램프 공통 PN 고정, 적색 Q00~Q04: 출력 OFF <span class="mono">0V</span>, ON <span class="mono">220V</span> 측정 (한 손 측정)</span></label>
+      <label><input type="checkbox" id="c10"><span>220V가 나오는데 램프가 안 켜지면 램프·공통선을, 0V면 프로그램·출력 쪽을 점검한다</span></label>
+    </fieldset>
+    <fieldset class="rec"><legend>4. 비교 실험 기록 (교사 시연 권장)</legend>
+      <label>입력 COM=24V, 스위치 OFF일 때 I00–24G: <input id="r1" inputmode="decimal"> V</label>
+      <label>출력 COM=L3, 출력 OFF일 때 Q00–L3: <input id="r2" inputmode="decimal"> V</label>
+      <label>램프 뺀 상태, 출력 OFF, 일반 테스터 Q00–L3: <input id="r3" inputmode="decimal"> V</label>
+      <label>같은 조건, LoZ 테스터(또는 램프 연결): <input id="r4" inputmode="decimal"> V</label>
+    </fieldset>
+    <button class="btn" id="chkReset" type="button">체크 모두 지우기</button>
+  </div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section aria-labelledby="quiz-h">
+  <div class="prose"><span class="eyebrow">평가</span><h2 id="quiz-h">확인 문제 10</h2><p>보기를 누르면 바로 채점되고 해설이 나옵니다. 점수 <span class="score" id="score">0 / 10</span></p></div>
+  <div class="quiz" id="quiz"></div>
+  <button class="btn" id="quizReset" type="button">다시 풀기</button>
+</section>
+
+<footer>실습 PLC와 전원 사양에 따라 수치가 다를 수 있습니다. 결선 전 해당 기종의 사용설명서를 우선합니다. 출력 표기(P40 등)는 기종·모듈 구성에 따라 다를 수 있습니다.</footer>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const C=n=>`var(--${n})`;
+const S={inCom:'24G', ssFirst:true, outCom:'L3', lbl:0, ref:'24G', mtr:'hiz', red:{side:'in',n:0},
+  sw:{SS_A:false,SS_B:false,SS_C:false,PB_A:false,PB_B:false,PB_C:false}, lampOpen:[false,false,false,false,false]};
+const LBL=[{n:'I00/Q00 (IEC)',i:k=>'I0'+k,q:k=>'Q0'+k},{n:'P00/P40 (LS XGB)',i:k=>'P0'+k,q:k=>'P4'+k},{n:'X0/Y0 (미쓰비시)',i:k=>'X'+k,q:k=>'Y'+k}];
+const ROWY=[134,161,188,215,242,269], QY=[215,242,269,296,323];
+let ghost=58;
+
+function order(){return S.ssFirst?['SS_A','SS_B','SS_C','PB_A','PB_B','PB_C']:['PB_A','PB_B','PB_C','SS_A','SS_B','SS_C'];}
+function inputs(){return order().map(n=>S.sw[n]);}
+function pot(){
+  const comV=S.inCom==='24V'?24:0, busV=24-comV;
+  const ins=inputs();
+  const vI=ins.map(on=>on?busV:comV);
+  const outOn=[0,1,2,3,4].map(k=>ins[k]);
+  const L=S.outCom==='L1'; const comA=L?220:0, lampBus=220-comA;
+  const vQ=outOn.map((on,k)=>on?comA:(S.lampOpen[k]?null:lampBus));
+  const lit=outOn.map((on,k)=>on&&!S.lampOpen[k]);
+  return {comV,busV,vI,ins,outOn,comA,lampBus,vQ,lit};
+}
+function draw(){
+  const P=pot(), L=LBL[S.lbl];
+  const cIn=v=>v>=12?C('p24'):C('g24');
+  const cOut=v=>v===null?C('float'):(v>=110?C('live'):C('neu'));
+  let g='';
+  // ---- PLC box
+  g+=`<rect class="box" x="360" y="40" width="180" height="330" rx="3"/>
+    <text class="t" x="382" y="32" text-anchor="middle" fill="${C('g24')}" font-weight="700">IN</text>
+    <text class="t" x="518" y="32" text-anchor="middle" fill="${C('g24')}" font-weight="700">OUT</text>
+    <text x="450" y="210" text-anchor="middle" font-family="var(--f-display)" font-weight="700" font-size="22" fill="${C('g24')}">PLC</text>`;
+  const inT=[['24V',55,C('p24')],['24G',80,null],['COM',107,null]];
+  inT.forEach(([t,y,c])=>g+=`<text class="tl" x="366" y="${y+4}" ${c?`fill="${c}"`:''}>${t}</text>`);
+  g+=`<text class="ts" x="396" y="59" fill="${C('p24')}" font-weight="700">POWER OUT</text><text class="ts" x="396" y="84" fill="${C('g24')}" font-weight="700">POWER OUT</text><text class="ts" x="398" y="111" fill="${C('g24')}" font-weight="700">INPUT COM</text>`;
+  ROWY.forEach((y,k)=>{g+=`<text class="tl" x="366" y="${y+4}">${L.i(k)}</text><circle cx="403" cy="${y}" r="3.5" fill="${P.ins[k]?C('ok'):'none'}" stroke="var(--muted)"/>`;});
+  ['COM0','COM1','COM2','COM3'].forEach((t,k)=>g+=`<text class="tl" x="534" y="${107+27*k+4}" text-anchor="end">${t}</text>`);
+  QY.forEach((y,k)=>{g+=`<text class="tl" x="534" y="${y+4}" text-anchor="end">${L.q(k)}</text><circle cx="499" cy="${y}" r="3.5" fill="${P.outOn[k]?C('accent'):'none'}" stroke="var(--muted)"/>`;});
+  g+=`<text class="tl" x="534" y="354" text-anchor="end">FG</text>`;
+  // ---- input wiring
+  const busTop = S.inCom==='24V'?80:55;
+  if(S.inCom==='24V'){
+    g+=`<path class="w" d="M360,55 H345 V107 H360" stroke="${C('p24')}"/>`;
+    g+=`<path class="w" d="M360,80 H351 A6,6 0 0 0 339,80 H38 V269" stroke="${cIn(P.busV)}"/>`;
+  } else {
+    g+=`<path class="w" d="M360,80 H347 V107 H360" stroke="${C('g24')}"/>`;
+    g+=`<path class="w" d="M360,55 H38 V269" stroke="${cIn(P.busV)}"/>`;
+  }
+  const busName=S.inCom==='24V'?'24G':'24V';
+  g+=`<circle class="tp" cx="257" cy="${busTop}" r="8"/><text class="tl" x="257" y="${busTop-13}" text-anchor="middle" fill="${cIn(P.busV)}">${busName}</text>`;
+  order().forEach((name,k)=>{
+    const y=ROWY[k], on=S.sw[name], ss=name.startsWith('SS');
+    g+=`<circle cx="38" cy="${y}" r="2.5" fill="var(--fg)"/>`;
+    g+=`<path class="w" d="M38,${y} H70" stroke="${cIn(P.busV)}"/>`;
+    g+=`<path class="w" d="M110,${y} H360" stroke="${cIn(P.vI[k])}"/>`;
+    if(ss){ g+= on?`<path d="M70,${y} L110,${y}" stroke="var(--fg)" stroke-width="2.2"/>`:`<path d="M70,${y} L107,${y-12}" stroke="var(--fg)" stroke-width="2.2"/>`;
+      g+=`<path d="M86,${on?y-8:y-14} l6,-5 l6,5" fill="none" stroke="var(--muted)" stroke-width="1.3"/>`; }
+    else { const yy=on?y:y-7; g+=`<path d="M70,${yy} H110 M90,${yy} V${yy-8} M84,${yy-8} H96" stroke="var(--fg)" stroke-width="2.2" fill="none"/>`; }
+    g+=`<circle cx="70" cy="${y}" r="3" class="tp"/><circle cx="110" cy="${y}" r="3" class="tp"/>`;
+    g+=`<text class="ts" x="122" y="${y-5}" font-weight="700" ${on?`fill="${C('ok')}"`:''}>${name}${on?' ON':''}</text>`;
+    g+=`<rect class="hit" tabindex="0" role="button" aria-label="${name} ${on?'끄기':'켜기'}" data-sw="${name}" x="58" y="${y-24}" width="64" height="40"/>`;
+    // test point
+    g+=`<text class="tl" x="205" y="${y-11}" text-anchor="middle" fill="${C('g24')}">${L.i(k)}</text><circle class="tp hov" cx="205" cy="${y}" r="8"/>`;
+    g+=`<rect class="hit" tabindex="0" role="button" aria-label="${L.i(k)} 측정" data-tp="in-${k}" x="193" y="${y-12}" width="24" height="24"/>`;
+    if(on) g+=`<path class="flow" d="M38,${y} H360"/>`;
+  });
+  if(P.ins.some(x=>x)){ g+=`<path class="flow" d="${S.inCom==='24V'?'M360,107 H345 V55 H360':'M360,107 H347 V80 H360'}"/>`; }
+  // ---- output wiring
+  const comName=S.outCom==='L1'?'F1-1(L1)':'F1-2(L3)', busNameO=S.outCom==='L1'?'F1-2(L3)':'F1-1(L1)';
+  g+=`<path class="w" d="M540,107 H560 V188 H540 M540,134 H560 M540,161 H560" stroke="${cOut(P.comA)}"/>`;
+  g+=`<path class="w" d="M560,107 H595 V24" stroke="${cOut(P.comA)}"/>`;
+  g+=`<text class="tl" x="595" y="16" text-anchor="middle" fill="${cOut(P.comA)}">${comName}</text>`;
+  g+=`<text class="ts" x="570" y="168" fill="${C('g24')}">COM 점퍼 (DR20SU: COM0~COM3)</text>`;
+  g+=`<path class="w" d="M745,323 V24" stroke="${cOut(P.lampBus)}"/>`;
+  g+=`<circle class="tp" cx="745" cy="42" r="8"/><text class="tl" x="760" y="46" fill="${C('g24')}">PN</text>`;
+  g+=`<text class="tl" x="745" y="16" text-anchor="middle" fill="${cOut(P.lampBus)}">${busNameO}</text>`;
+  QY.forEach((y,k)=>{
+    const v=P.vQ[k], fl=v===null, lit=P.lit[k], open=S.lampOpen[k];
+    g+=`<path class="w" d="M540,${y} H670" stroke="${cOut(v)}" ${fl?'stroke-dasharray="7 5"':''}/>`;
+    g+=`<path class="w" d="M694,${y} H745" stroke="${cOut(P.lampBus)}"/><circle cx="745" cy="${y}" r="2.5" fill="var(--fg)"/>`;
+    if(lit) g+=`<circle cx="682" cy="${y}" r="15" fill="${C('lamp')}" opacity=".45"/>`;
+    g+=`<circle cx="682" cy="${y}" r="9" fill="${lit?C('lamp'):'var(--panel)'}" stroke="var(--fg)" stroke-width="1.5"/>`;
+    g+= open ? `<path d="M675.6,${y-6.4} L680,${y-2} M684,${y+2} L688.4,${y+6.4} M675.6,${y+6.4} L688.4,${y-6.4}" stroke="${C('bad')}" stroke-width="1.6"/>`
+             : `<path d="M675.6,${y-6.4} L688.4,${y+6.4} M675.6,${y+6.4} L688.4,${y-6.4}" stroke="var(--fg)" stroke-width="1.5"/>`;
+    g+=`<text class="ts" x="700" y="${y-8}" font-weight="700" ${open?`fill="${C('bad')}"`:''}>PL_${'ABCDE'[k]}${open?' 단선':''}</text>`;
+    g+=`<rect class="hit" tabindex="0" role="button" aria-label="PL_${'ABCDE'[k]} 단선 전환" data-lamp="${k}" x="668" y="${y-13}" width="28" height="26"/>`;
+    g+=`<text class="tl" x="620" y="${y-11}" text-anchor="middle" fill="${C('g24')}">${L.q(k)}</text><circle class="tp hov" cx="620" cy="${y}" r="8"/>`;
+    g+=`<rect class="hit" tabindex="0" role="button" aria-label="${L.q(k)} 측정" data-tp="out-${k}" x="608" y="${y-12}" width="24" height="24"/>`;
+    if(fl && S.mtr==='hiz' && S.red.side==='out' && S.red.n===k) g+=`<path d="M560,${y-6} q5,-7 10,0 q5,7 10,0 q5,-7 10,0" fill="none" stroke="${C('accent')}" stroke-width="1.6"/>`;
+    if(lit) g+=`<path class="flow" d="M560,${y<200?107:188} V${y} H745"/>`;
+  });
+  if(P.lit.some(x=>x)) g+=`<path class="flow" d="M595,24 V107 H560 M745,24 V323"/>`;
+  g+=`<path class="w" d="M540,350 H625" stroke="${C('pe')}"/><circle class="tp" cx="633" cy="350" r="8"/><text class="tl" x="647" y="354" fill="${C('pe')}">PE (접지)</text>`;
+  // ---- probes
+  const rp = S.red.side==='in' ? [205,ROWY[S.red.n]] : [620,QY[S.red.n]];
+  const bp = {'24G':[360,80],'COM':[360,107],'L3':S.outCom==='L1'?[745,42]:[595,40],'PN':[745,42],'COM0':[540,107]}[S.ref];
+  g+=`<circle cx="${rp[0]}" cy="${rp[1]}" r="13" fill="none" stroke="#e74c3c" stroke-width="3"/>`;
+  g+=`<circle cx="${bp[0]}" cy="${bp[1]}" r="13" fill="none" stroke="var(--fg)" stroke-width="2.5" stroke-dasharray="3 3"/>`;
+  g+=`<text class="ts" x="30" y="392">퓨즈 F1-1(L1)·F1-2(L3) → PLC 전원 L·N, 출력 COM, 램프 공통 PN · F2(L1·L3) → 시퀀스 220</text>`;
+  $('#svg').innerHTML=g;
+  meter(P,L); verdicts(P,L);
+  $('#bInS').textContent='지금: 입력 COM='+S.inCom+(S.inCom==='24G'?' (권장)':'');
+  $('#bOrdS').textContent='지금: '+(S.ssFirst?'SS 먼저':'PB 먼저');
+  $('#bOutS').textContent='지금: 출력 COM='+(S.outCom==='L1'?'F1-1(L1) (권장)':'F1-2(L3)');
+  $('#bLblS').textContent='지금: '+L.n;
+}
+function refName(){return {'24G':'PLC 24G','COM':'입력 COM','PN':'램프 공통 PN ('+(S.outCom==='L1'?'F1-2(L3)':'F1-1(L1)')+')','L3':'F1-2(L3)','COM0':'출력 COM0'}[S.ref];}
+function meter(P,L){
+  const inSide=S.red.side==='in', k=S.red.n;
+  const refIn=S.ref==='24G'||S.ref==='COM';
+  $('#pRed').innerHTML=`<i class="pr" style="background:#e74c3c"></i>적색(+) → ${inSide?L.i(k):L.q(k)}`;
+  $('#pBlk').innerHTML=`<i class="pr" style="background:#111;border:1px solid #888"></i>흑색(−) → ${refName()}`;
+  let txt,unit='V';
+  if(inSide!==refIn){ txt='– – –'; $('#mMode').textContent='측정 불가'; }
+  else if(inSide){
+    $('#mMode').textContent='DC V · '+(S.mtr==='hiz'?'일반 디지털':'LoZ');
+    const r=P.vI[k]-(S.ref==='24G'?0:P.comV); txt=r.toFixed(1);
+  } else {
+    $('#mMode').textContent='AC V · '+(S.mtr==='hiz'?'일반 디지털 (10MΩ)':'LoZ (약 3kΩ)');
+    const v=P.vQ[k], ref=S.ref==='L3'?0:(S.ref==='PN'?P.lampBus:P.comA);
+    if(v===null) txt=S.mtr==='hiz'?String(ghost):'0.4'; else txt=String(Math.abs(v-ref));
+  }
+  $('#lcd').innerHTML=txt+'<small>'+unit+'</small>';
+  $('#mState').textContent = inSide ? `입력 LED ${L.i(k)}: ${P.ins[k]?'켜짐':'꺼짐'}` : `출력 ${L.q(k)}: ${P.outOn[k]?'ON':'OFF'} · PL_${'ABCDE'[k]}: ${P.lit[k]?'점등':(S.lampOpen[k]?'단선':'소등')}`;
+}
+function setV(id,cls,t,b){const v=$(id);v.className='verdict '+cls;v.innerHTML=`<b>${t}</b>${b}`;}
+function verdicts(P,L){
+  if(S.inCom==='24G') setV('#vIn','good','입력: COM=24G, 스위치 공통선=24V','스위치를 누르면 I 단자로 24V가 들어옵니다. 흑색 24G 고정으로 OFF 0V, ON 24V.');
+  else setV('#vIn','warn','입력: COM=24V, 스위치 공통선=24G','동작은 정상이지만 OFF인 I 단자에 포토커플러를 거쳐 온 24V가 보이고, 누르면 0V가 됩니다. 거꾸로 읽어야 합니다.');
+  if(S.outCom==='L1') setV('#vOut','good','출력: COM0~3=F1-1(L1), 램프 공통 PN=F1-2(L3)','PLC 전원 L측이 COM으로 들어가 ON 때 Q 단자로 220V가 나갑니다. 흑색을 PN(=F1-2, N측)에 두면 ON 220V, OFF 0V. 기준점이 PN과 F1-2 하나뿐이라 헷갈리지 않습니다.');
+  else setV('#vOut','warn','출력: COM0~3=F1-2(L3), 램프 공통 PN=F1-1(L1)','흑색을 PN(L1)에 두면 정상으로 읽히지만, 습관대로 N측인 F1-2(L3)에 두면 꺼져 있을 때 220V, 켜지면 0V로 거꾸로 보입니다. 단상 L–N 전원이었다면 램프가 꺼져도 소켓에 220V가 남는 결선입니다.');
+  const inSide=S.red.side==='in', k=S.red.n, refIn=S.ref==='24G'||S.ref==='COM';
+  if(inSide!==refIn){ setV('#vMeas','bad','두 리드가 서로 다른 회로에 있습니다.','입력(DC 24V)과 출력(AC 220V)은 포토커플러와 릴레이로 서로 절연된 별개의 회로입니다. 두 회로 사이에는 기준점이 없으니 흑색 위치를 같은 회로로 옮기세요.'); return; }
+  if(inSide){
+    const on=P.ins[k], A=S.inCom==='24G';
+    if(A) setV('#vMeas','good',on?`누르니 24V. 전압이 ${L.i(k)}로 들어왔습니다.`:'안 누르면 0V.', S.ref==='24G'?'흑색 24G 고정, 적색으로 I 단자만 찍으면 "0V는 OFF, 24V는 ON". 입력 LED·래더 모니터와 일치합니다.':'COM=24G라서 흑색을 24G에 대든 COM에 대든 같은 값입니다. 기준점이 하나라 헷갈릴 일이 없습니다.');
+    else if(S.ref==='24G') setV('#vMeas','warn',on?'눌렀는데 0V입니다.':'안 눌렀는데 24V가 나옵니다.','COM의 24V가 포토커플러를 거쳐 I 단자까지 올라와 있기 때문입니다(테스터 내부저항이 매우 커서 거의 24V로 보임). 입력은 정상인데 측정값이 거꾸로라 초보자가 "스위치 불량"으로 오판하기 쉽습니다. "입력전원 바꾸기"를 눌러 보세요.');
+    else setV('#vMeas','warn',on?'−24V. 흑색을 COM(24V)에 대니 부호가 뒤집혔습니다.':'0V.','흑색을 COM으로 옮기면 크기는 맞지만 음수로 나옵니다. 측정 기준점을 매번 바꿔야 하는 결선입니다.');
+  } else {
+    const on=P.outOn[k], open=S.lampOpen[k], A=S.outCom==='L1', hiz=S.mtr==='hiz', nm=L.q(k);
+    const effL = S.ref==='PN' || (S.ref==='L3' && S.outCom==='L1');
+    const tail = (S.ref==='PN' && !A) ? ' (이 결선에서 흑색을 F1-2(L3)로 옮기면 거꾸로 읽힙니다. 직접 바꿔 보세요.)' : '';
+    if(S.ref==='COM0'){ setV('#vMeas','warn','흑색을 출력 COM0에 대면 접점 양단 전압을 잽니다.','ON(접점 닫힘)이면 0V, OFF면 램프를 거쳐 220V가 보입니다. 결선 방향과 관계없이 거꾸로 읽히므로, 램프 점검은 흑색을 램프 공통(L3)에 두고 합니다.'); return; }
+    if(effL){
+      if(on&&!open) setV('#vMeas','good',`${nm}에서 220V, 램프 점등.`,'COM에 걸어 둔 전원이 접점을 지나 Q 단자로 나갔습니다. "220V = 출력 ON"으로 그대로 읽힙니다.'+tail);
+      else if(on) setV('#vMeas','warn',`${nm}에 220V가 나오는데 램프가 안 켜집니다.`,'PLC 출력은 정상, 고장은 램프나 램프 공통선 쪽입니다. 측정 한 번으로 PLC 쪽인지 부하 쪽인지 갈라집니다.');
+      else if(!open) setV('#vMeas','good','OFF에서 0V.','접점이 열려 있고 램프 필라멘트가 Q 단자를 램프 공통 PN에 이어 주므로 0V입니다.'+tail);
+      else if(hiz) setV('#vMeas','warn',`OFF인데 ${ghost}V? 이것이 유도(허상)전압입니다.`,'램프가 끊겨 Q 단자~램프 선이 어디에도 안 붙고 떠 있습니다. 같은 덕트의 220V 전선에서 정전용량으로 옮아온 전압을 입력저항이 큰 테스터가 그대로 보여 줍니다. 테스터 종류를 LoZ로 바꿔 보세요.');
+      else setV('#vMeas','good','LoZ로 재니 0V 근처로 떨어집니다.','저임피던스 테스터는 수 kΩ 부하를 걸고 재므로 힘없는 유도전압은 사라집니다. 진짜 전압이면 LoZ로 재도 남습니다.');
+    } else {
+      if(on&&!open) setV('#vMeas','warn','램프는 켜졌는데 0V입니다.','접점이 닫혀 Q 단자가 L3와 같아졌기 때문입니다. "출력 ON = 0V"로 거꾸로 읽어야 합니다.');
+      else if(on) setV('#vMeas','bad','0V, 램프도 안 켜집니다.','램프가 정상이어도 0V, 단선이어도 0V입니다. 이 결선에서는 Q 단자 측정만으로 램프 고장을 찾을 수 없습니다.');
+      else if(!open) setV('#vMeas','bad','램프가 꺼져 있는데 220V가 나옵니다.','램프 필라멘트를 거쳐 L1 전위가 Q 단자까지 와 있는 진짜 전압입니다(LoZ로 재도 남음). 학생은 "PLC 출력이 안 꺼진다"고 오판하기 쉽습니다.');
+      else if(hiz) setV('#vMeas','warn',`OFF, 램프 단선에서 ${ghost}V (유도전압).`,'정상 OFF는 220V, 단선 OFF는 수십 V, ON은 0V. 상황마다 숫자가 뒤죽박죽이라 램프 동작 점검이 어렵습니다.');
+      else setV('#vMeas','warn','LoZ에서는 0V 근처.','유도전압은 사라졌지만, 이 결선은 여전히 정상 OFF가 220V로 보입니다.');
+    }
+  }
+}
+// events
+$('#svg').addEventListener('click',e=>{
+  const t=e.target.closest('[data-sw],[data-tp],[data-lamp]'); if(!t) return;
+  if(t.dataset.sw){S.sw[t.dataset.sw]=!S.sw[t.dataset.sw];}
+  else if(t.dataset.lamp){const k=+t.dataset.lamp;S.lampOpen[k]=!S.lampOpen[k];S.red={side:'out',n:k};if(S.ref==='24G'||S.ref==='COM')setRef('PN');}
+  else { const [side,n]=t.dataset.tp.split('-'); S.red={side,n:+n};
+    const refIn=S.ref==='24G'||S.ref==='COM'; if(side==='in'&&!refIn)setRef('24G'); if(side==='out'&&refIn)setRef('PN'); }
+  draw();
+});
+$('#svg').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('hit')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+function setRef(v){S.ref=v;[...$('#ref').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));}
+$('#ref').addEventListener('click',e=>{const b=e.target.closest('button');if(b){setRef(b.dataset.v);draw();}});
+$('#mtr').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mtr=b.dataset.v;[...$('#mtr').children].forEach(x=>x.setAttribute('aria-pressed',x===b));draw();});
+$('#bIn').onclick=()=>{S.inCom=S.inCom==='24V'?'24G':'24V';draw();};
+$('#bOrd').onclick=()=>{S.ssFirst=!S.ssFirst;draw();};
+$('#bOut').onclick=()=>{S.outCom=S.outCom==='L1'?'L3':'L1';draw();};
+$('#bLbl').onclick=()=>{S.lbl=(S.lbl+1)%LBL.length;draw();};
+draw();
+setInterval(()=>{const P=pot();if(S.red.side==='out'&&P.vQ[S.red.n]===null&&S.mtr==='hiz'&&S.ref!=='COM0'){ghost=52+Math.round(Math.random()*12);draw();}},1200);
+
+// checklist
+const KEY='plc-com-check-v2'; let saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+document.querySelectorAll('#checklist input').forEach(inp=>{
+  if(saved[inp.id]!==undefined){if(inp.type==='checkbox')inp.checked=saved[inp.id];else inp.value=saved[inp.id];}
+  inp.addEventListener('input',()=>{saved[inp.id]=inp.type==='checkbox'?inp.checked:inp.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}});
+});
+$('#chkReset').onclick=()=>{saved={};try{localStorage.removeItem(KEY)}catch(e){}document.querySelectorAll('#checklist input').forEach(i=>{if(i.type==='checkbox')i.checked=false;else i.value='';});};
+
+// quiz
+const Q=[
+ ['양방향(AC 입력형) 포토커플러를 쓰는 PLC에서 입력 COM을 24V에 두든 24G에 두든 입력이 동작하는 이유는?',['내부 정류 다이오드가 있어서','LED 두 개가 서로 반대 방향으로 붙어 있어 어느 방향 전류에도 하나가 켜져서','PLC가 극성을 자동으로 바꿔서','24V가 교류라서'],1,'역병렬 LED 두 개 중 하나가 늘 순방향이 되므로 전류 방향과 관계없이 신호가 전달됩니다.'],
+ ['입력 COM을 24G에, 스위치 공통선을 24V에 연결했다. SS_A를 ON 하고 흑색 24G, 적색 I00을 재면?',['0V','약 12V','24V','−24V'],2,'24V가 스위치를 지나 I00으로 들어오므로 24V입니다. "누르면 24V"로 바로 읽힙니다.'],
+ ['입력 COM을 24V에(점퍼), 스위치 공통선을 24G에 연결했다. 스위치 OFF에서 흑색 24G, 적색 I00을 재면?',['0V','약 24V','측정 불가','−24V'],1,'COM의 24V가 포토커플러를 거쳐 I00까지 올라와 있어 OFF인데 약 24V가 보입니다. 입력은 정상이지만 거꾸로 읽어야 합니다.'],
+ ['NPN 출력형 근접센서(신호선을 0V로 끌어내림)를 양방향 입력에 연결할 때 입력 COM은?',['24V','24G','F1-2(L3)','비워 둔다'],0,'NPN 센서는 신호선을 0V로 당기므로 COM을 24V에 둡니다. PNP 센서는 반대로 24G입니다.'],
+ ['24G를 외함에 접지한 제어반에서, 입력선이 외함에 닿았을 때 스위치를 안 눌렀는데도 입력이 ON 될 수 있는 결선은?',['COM=24G, 스위치 공통선=24V','COM=24V, 스위치 공통선=24G','두 결선 모두','두 결선 모두 아님'],1,'COM이 24V이면 입력선이 0V(외함)에 닿기만 해도 전류가 흘러 입력이 켜집니다. 위험측 고장입니다.'],
+ ['"AC 입력형 포토커플러"가 들어간 DC 24V 입력 단자에 AC 220V를 걸면?',['정상 동작한다','극성만 바뀐다','입력 회로가 소손될 수 있다','LED만 더 밝아진다'],2,'"AC 입력형"은 양방향 전류를 받는다는 뜻이지 220V를 받는다는 뜻이 아닙니다.'],
+ ['COM0~COM3를 F1-1(L1)에, 램프 공통을 F1-2(L3)에 연결했다. Q00 ON에서 흑색 L3, 적색 Q00을 재면?',['0V','약 110V','220V','측정할 때마다 다르다'],2,'COM의 L1이 접점을 지나 Q00으로 나갑니다. "ON = 220V"로 읽힙니다.'],
+ ['출력 COM을 F1-2(L3)에, 램프 공통을 F1-1(L1)에 연결했다. Q00 OFF인데 Q00–L3 사이가 220V인 이유는?',['릴레이 접점이 붙어 버려서','램프 필라멘트를 거쳐 L1 전위가 Q00까지 와 있어서','테스터 고장','유도전압이라서'],1,'전류가 거의 없으면 램프 양 끝 전위가 같습니다. 진짜 L1 전위이며 LoZ로 재도 남습니다.'],
+ ['PL_A를 뺀 상태에서 Q00 OFF, 일반 디지털 테스터로 Q00–L3를 재니 50V 정도가 나왔다. 알맞은 해석과 확인 방법은?',['출력 접점 불량, PLC 교체','떠 있는 선의 유도(허상)전압, LoZ 테스터나 램프를 연결하고 다시 잰다','L3 단선, 바로 재결선','정상 출력, 그대로 둔다'],1,'떠 있는 전선은 이웃 전선과의 정전용량으로 수십 V가 보일 수 있고, LoZ로 재면 사라집니다.'],
+ ['F1-1(L1)·F1-2(L3) 두 상에서 220V를 받는 출력 회로에서 램프를 교체할 때 올바른 것은?',['출력만 OFF 하면 안전하다','COM을 L1에 두었으니 램프는 무전압이다','F1을 내린 뒤 교체한다','L3 쪽만 테스터로 확인하면 된다'],2,'L1·L3는 둘 다 대지전압이 있는 선이라 출력 OFF여도 램프 한쪽은 충전 상태입니다. 반드시 차단 후 작업합니다.']
+];
+let score=0;
+function buildQuiz(){score=0;$('#score').textContent='0 / '+Q.length;const box=$('#quiz');box.innerHTML='';
+  Q.forEach((q,i)=>{const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<div class="stem">${i+1}. ${q[0]}</div><div class="opts">${q[1].map((o,j)=>`<button type="button" data-j="${j}">${'①②③④'[j]} ${o}</button>`).join('')}</div><div class="exp" hidden></div>`;
+    d.querySelector('.opts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const j=+b.dataset.j;const bs=d.querySelectorAll('.opts button');
+      bs.forEach(x=>x.disabled=true);bs[q[2]].classList.add('right');if(j===q[2])score++;else b.classList.add('wrong');
+      const ex=d.querySelector('.exp');ex.hidden=false;ex.textContent=(j===q[2]?'정답. ':'오답. 정답은 '+'①②③④'[q[2]]+'. ')+q[3];$('#score').textContent=score+' / '+Q.length;});
+    box.appendChild(d);});}
+buildQuiz(); $('#quizReset').onclick=buildQuiz;
+})();
+</script>
+
+</body></html>

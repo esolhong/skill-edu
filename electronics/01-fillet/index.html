@@ -1,0 +1,218 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>필렛 판정 교실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column like a workbench handout; interactive cross-sections sit in "inspection panels" that look like a loupe view */
+:root{
+  --bg:#f3f5f1; --paper:#ffffff; --ink:#1d2a24; --muted:#5b6b63; --line:#d5ddd6;
+  --mask:#2f6b45; --mask-edge:#3f8a5a; --cu:#c4743a; --solder:#bfc5cc; --solder-hi:#e2e6ea; --lead:#7f8790; --cold:#8e9399; --cold-dot:#676c72;
+  --accent:#b8612a; --good:#1f8a5b; --bad:#c8432f; --panel:#18211c; --panel-ink:#e8eee9;
+  --f-display:'IBM Plex Sans KR','Noto Sans KR',system-ui,sans-serif;
+  --f-body:'Noto Sans KR',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111814; --paper:#18211c; --ink:#e6ece7; --muted:#9aaba1; --line:#2b3831;
+  --accent:#e08a4f; --good:#45c486; --bad:#ff7a66; --panel:#0b100d; --panel-ink:#e8eee9; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111814; --paper:#18211c; --ink:#e6ece7; --muted:#9aaba1; --line:#2b3831;
+  --accent:#e08a4f; --good:#45c486; --bad:#ff7a66; --panel:#0b100d; --panel-ink:#e8eee9; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:clamp(28px,6vw,40px)} h2{font-size:24px} h3{font-size:18px}
+p{margin:0} .muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:13px;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+header{display:flex;flex-direction:column;gap:12px}
+section{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--panel);color:var(--panel-ink);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.panel svg{width:100%;height:auto;max-height:340px;display:block;margin:0 auto}
+.loupe{position:relative;border-radius:10px;background:radial-gradient(circle at 50% 45%,#1f2a23 0%,#0d120f 75%)}
+.verdict{font-family:var(--f-display);font-size:22px;font-weight:700}
+.verdict.ok{color:#45c486} .verdict.ng{color:#ff7a66}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:520px){.controls{grid-template-columns:1fr}}
+.ctrl{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.ctrl label{color:#b9c6be}
+input[type=range]{width:100%;accent-color:#e08a4f}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button,.choice{font:inherit;font-size:14px;border:1px solid #3a4a41;background:transparent;color:var(--panel-ink);padding:6px 12px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#e08a4f;border-color:#e08a4f;color:#111}
+button:focus-visible,input:focus-visible{outline:2px solid #e08a4f;outline-offset:2px}
+.checks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:600px){.checks{grid-template-columns:1fr}}
+.check{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.check b{font-family:var(--f-display);font-size:17px}
+.num{font-family:var(--f-mono);color:var(--accent);font-size:13px}
+.defects{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.defect{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.defect .mini{background:var(--panel)} .defect .mini svg{width:100%;height:auto;display:block}
+.defect .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.defect .body b{font-family:var(--f-display);font-size:17px;color:var(--bad)}
+.tag{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+video{width:100%;border-radius:12px;background:#000;display:block}
+.quiz .q{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px}
+@media (max-width:560px){.quiz .q{grid-template-columns:1fr}}
+.quiz .q .mini{background:var(--panel);border-radius:8px} .quiz .q svg{width:100%;height:auto;display:block}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.quiz .choice{color:var(--ink);border-color:var(--line);background:var(--bg)}
+.quiz .choice[data-state="right"]{background:var(--good);border-color:var(--good);color:#fff}
+.quiz .choice[data-state="wrong"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.feedback{font-size:14px;min-height:1.5em}
+.score{font-family:var(--f-display);font-weight:700;font-size:18px}
+.score span{font-family:var(--f-mono)}
+ol.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px}
+.todo{display:flex;flex-direction:column;gap:8px}
+.todo label{display:flex;gap:10px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.todo input{margin-top:6px;accent-color:var(--accent)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<nav style="max-width:760px;margin:0 auto 16px;font-size:14px"><a href="../../" style="color:inherit">← 전체 목차</a></nav>
+<div class="wrap">
+<header>
+  <div class="eyebrow">전자 실기 01 · 납땜 판정</div>
+  <h1>좋은 필렛 vs 불량 필렛</h1>
+  <p class="muted">납땜이 붙어 있다고 다 합격은 아닙니다. 납의 <b>모양</b>을 보면 잘 붙었는지 알 수 있어요. 아래 단면 그림을 직접 바꿔 보고, 마지막에 판정 퀴즈를 풀어 보세요.</p>
+</header>
+
+<section>
+  <h2>단면으로 보는 납땜</h2>
+  <p class="muted">납땜한 핀을 반으로 잘라 옆에서 본 그림입니다. 납 양과 열을 바꾸면 결과가 어떻게 달라지는지 확인해 보세요.</p>
+  <div class="panel">
+    <div class="loupe"><svg id="sim" viewBox="-170 -200 340 320" role="img" aria-label="납땜 단면 시뮬레이션"></svg></div>
+    <div class="verdict" id="simVerdict" aria-live="polite"></div>
+    <p id="simWhy" style="font-size:14px;color:#c9d4cd"></p>
+    <div class="controls">
+      <div class="ctrl"><label for="amt">납 양</label><input id="amt" type="range" min="0" max="2" step="1" value="1"><div style="display:flex;justify-content:space-between;font-size:12px;color:#9aaba1"><span>적게</span><span>적당히</span><span>많이</span></div></div>
+      <div class="ctrl"><label>패드와 다리를 충분히 데웠나요?</label><div class="seg" id="heat"><button type="button" aria-pressed="true" data-v="1">예, 둘 다</button><button type="button" aria-pressed="false" data-v="0">아니요, 납만 녹임</button></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>이론 애니메이션</h2>
+  <p class="muted">필렛이 생기는 과정과 젖음 각도를 40초로 정리했습니다. 실제 수업 영상에서는 이 장면 사이사이에 현미경 실물 컷이 들어갑니다.</p>
+  <video controls preload="metadata" src="theory-animation-sample.mp4"></video>
+</section>
+
+<section>
+  <h2>좋은 필렛 체크 3가지</h2>
+  <div class="checks">
+    <div class="check"><span class="num">CHECK 1</span><b>오목하다</b><span class="muted">패드 끝까지 얇게 퍼진 산 모양. 가장자리 각도가 작습니다.</span></div>
+    <div class="check"><span class="num">CHECK 2</span><b>다리 윤곽이 보인다</b><span class="muted">납에 파묻혀 다리가 사라지면 안 됩니다.</span></div>
+    <div class="check"><span class="num">CHECK 3</span><b>표면이 매끈하다</b><span class="muted">유연납은 반짝, 무연납은 살짝 무광이어도 정상입니다.</span></div>
+  </div>
+  <h3 style="margin-top:8px">순서는 "데우고, 넣고, 납 떼고, 인두 떼고"</h3>
+  <ol class="steps">
+    <li>인두 팁을 패드와 다리에 <b>동시에</b> 댄다 (1~2초)</li>
+    <li>인두 반대편에서 납을 넣는다. 데워진 금속이 납을 끌어당긴다</li>
+    <li>필렛이 산 모양이 되면 납을 먼저 뗀다</li>
+    <li>인두를 다리 방향으로 빼고, 굳을 때까지 움직이지 않는다</li>
+  </ol>
+</section>
+
+<section>
+  <h2>자주 나오는 불량 5가지</h2>
+  <div class="defects" id="defects"></div>
+</section>
+
+<section class="quiz">
+  <h2>판정 퀴즈</h2>
+  <p class="muted">단면을 보고 합격인지, 불량이면 어떤 불량인지 골라 보세요.</p>
+  <div id="quiz" style="display:flex;flex-direction:column;gap:12px"></div>
+  <div class="score" aria-live="polite">맞힌 문제 <span id="score">0 / 6</span></div>
+</section>
+
+<section>
+  <h2>실기 자기 점검표</h2>
+  <p class="muted">내 작품을 루페로 보면서 체크하세요. 이 기기에만 저장됩니다.</p>
+  <div class="todo" id="todo"></div>
+</section>
+
+<footer>전자 실기 교육자료 파일럿 · 그림은 이해를 돕기 위한 단순화된 단면이며 실제 판정은 학교 평가 기준을 따릅니다.</footer>
+</div>
+
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function joint(kind){
+  const M='#2f6b45',ME='#3f8a5a',CU='#c4743a',S='#c3c9d0',SH='#e4e8ec',L='#7f8790';
+  let g='';
+  g+=`<rect x="-165" y="0" width="135" height="56" fill="${M}" stroke="${ME}"/><rect x="30" y="0" width="135" height="56" fill="${M}" stroke="${ME}"/>`;
+  const pads = kind==='lifted'
+    ? `<path d="M-80 -20H-30V0H-80Z" fill="${CU}"/>`
+    : `<path d="M-80 -7H-30V63H-80V56H-36V0H-80Z" fill="${CU}"/>`;
+  g+=pads+`<path d="M80 -7H30V63H80V56H36V0H80Z" fill="${CU}"/>`;
+  const fill=(y0)=>`<rect x="-30" y="${y0}" width="18" height="${63-y0}" fill="${S}"/><rect x="12" y="${y0}" width="18" height="${63-y0}" fill="${S}"/>`;
+  let solder='', over='';
+  switch(kind){
+    case 'good':
+      solder=fill(-7)+`<path d="M-80 -7 Q-18 -16 -12 -100 L-12 -7Z" fill="${S}"/><path d="M80 -7 Q18 -16 12 -100 L12 -7Z" fill="${S}"/><path d="M-42 63 Q-16 66 -12 88 L-12 63Z" fill="${S}"/><path d="M42 63 Q16 66 12 88 L12 63Z" fill="${S}"/><path d="M-66 -12 Q-24 -20 -18 -80" stroke="${SH}" stroke-width="3" fill="none" opacity=".7"/>`;break;
+    case 'excess':
+      over=`<path d="M-62 -7 C-130 -30 -100 -150 0 -150 C100 -150 130 -30 62 -7Z" fill="${S}"/><path d="M-60 -60 Q-50 -120 0 -130" stroke="${SH}" stroke-width="3" fill="none" opacity=".7"/>`;solder=fill(-7);break;
+    case 'insufficient':
+      solder=fill(30)+`<path d="M-44 -7 Q-16 -9 -12 -30 L-12 -7Z" fill="${S}"/><path d="M44 -7 Q16 -9 12 -30 L12 -7Z" fill="${S}"/>`;break;
+    case 'cold':{
+      solder=fill(20)+`<path d="M-66 -7 C-72 -40 -40 -76 -12 -88 L12 -88 C40 -76 72 -40 66 -7Z" fill="#8e9399"/>`;
+      for(let i=0;i<46;i++){const a=i*2.4,r=(i*11)%56; solder+=`<circle cx="${(Math.cos(a)*r).toFixed(1)}" cy="${(-12-Math.abs(Math.sin(a))*r*1.1).toFixed(1)}" r="2.3" fill="#676c72"/>`}
+      solder+=`<path d="M-50 -30 l14 -10 l-4 -10" stroke="#4b4f54" stroke-width="2" fill="none"/>`;break;}
+    case 'bridge':
+      solder=fill(-7)+`<path d="M-80 -7 Q-18 -16 -12 -100 L-12 -7Z" fill="${S}"/><path d="M12 -100 Q16 -40 60 -30 Q120 -26 165 -40 L165 -7 L12 -7Z" fill="${S}"/><rect x="150" y="-170" width="14" height="164" fill="${L}"/>`;break;
+    case 'icicle':
+      solder=fill(-7)+`<path d="M-80 -7 Q-18 -16 -12 -100 L-12 -7Z" fill="${S}"/><path d="M80 -7 Q18 -16 12 -100 L12 -7Z" fill="${S}"/>`;
+      over=`<path d="M-12 -150 L0 -196 L12 -150 Z" fill="${S}"/>`;break;
+    case 'nonwet':
+      solder=fill(40)+`<circle cx="-36" cy="-30" r="28" fill="${S}"/><circle cx="36" cy="-30" r="28" fill="${S}"/>`;break;
+    case 'lifted':
+      solder=fill(-7)+`<path d="M-80 -20 Q-18 -28 -12 -100 L-12 -20Z" fill="${S}"/><path d="M80 -7 Q18 -16 12 -100 L12 -7Z" fill="${S}"/>`;break;
+    case 'empty': break;
+  }
+  const lead=`<rect x="-12" y="${kind==='icicle'?-150:-200}" width="24" height="${kind==='icicle'?250:300}" fill="${L}"/>`;
+  return g+solder+lead+over;
+}
+const INFO={
+  good:['합격','오목하고 패드 끝까지 얇게 퍼졌습니다. 다리 윤곽도 보입니다.',true],
+  excess:['과납','납을 너무 많이 넣어 구슬처럼 볼록합니다. 다리 윤곽이 가려 안쪽이 붙었는지 알 수 없습니다.',false],
+  insufficient:['소납','납이 모자라 패드가 드러나고 구멍이 덜 찼습니다.',false],
+  cold:['냉납','금속을 데우지 않고 납만 녹이면, 납이 금속에 젖지 못해 회색으로 거칠게 굳습니다.',false],
+  nonwet:['젖음 불량','패드가 더럽거나 열이 부족해 납이 동글게 맺혔습니다. 가장자리 각도가 90°를 넘습니다.',false],
+  bridge:['브리지','옆 핀까지 납이 이어졌습니다. 회로가 합선됩니다.',false],
+  icicle:['고드름','인두를 늦게 떼거나 플럭스가 부족해 뾰족한 뿔이 생겼습니다.',false],
+};
+// simulator
+const sim=document.getElementById('sim'), amt=document.getElementById('amt'), heatBox=document.getElementById('heat');
+let heat=1;
+function simKind(){const a=+amt.value; if(!heat) return a===0?'nonwet':'cold'; return ['insufficient','good','excess'][a];}
+function updateSim(){const k=simKind(); sim.innerHTML=joint(k); const [n,why,ok]=INFO[k];
+  const v=document.getElementById('simVerdict'); v.textContent=(ok?'판정: ':'판정: 불량, ')+n; v.className='verdict '+(ok?'ok':'ng');
+  document.getElementById('simWhy').textContent=why;}
+amt.addEventListener('input',updateSim);
+heatBox.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{heat=+b.dataset.v;heatBox.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));updateSim();}));
+updateSim();
+// defects
+const DEF=[['cold','회색, 거칠거칠, 금 간 듯','플럭스를 더하고 다시 녹이기'],['excess','구슬처럼 볼록, 윤곽 안 보임','솔더윅으로 덜어내기'],['insufficient','패드가 드러남, 구멍 덜 참','납을 조금 더 넣기'],['bridge','옆 핀과 납이 이어짐','솔더윅, 플럭스 후 인두로 갈라내기'],['icicle','뾰족한 뿔','플럭스 바르고 다시 녹이기']];
+document.getElementById('defects').innerHTML=DEF.map(([k,look,fix])=>`<div class="defect"><div class="mini"><svg viewBox="-170 -200 340 300" role="img" aria-label="${INFO[k][0]} 단면">${joint(k)}</svg></div><div class="body"><b>${INFO[k][0]}</b><span>${look}</span><span class="tag">원인</span><span>${INFO[k][1].split('. ')[0]}.</span><span class="tag">고치는 법</span><span>${fix}</span></div></div>`).join('');
+// quiz
+const Q=[['excess'],['good'],['cold'],['bridge'],['insufficient'],['icicle']];
+const OPTS=['good','cold','excess','insufficient','bridge','icicle'];
+const answered={}; const quiz=document.getElementById('quiz');
+quiz.innerHTML=Q.map(([k],i)=>`<div class="q"><div class="mini"><svg viewBox="-170 -200 340 300" role="img" aria-label="퀴즈 ${i+1} 단면">${joint(k)}</svg></div><div style="display:flex;flex-direction:column;gap:8px"><b>${i+1}. 이 납땜의 판정은?</b><div class="opts">${OPTS.map(o=>`<button type="button" class="choice" data-q="${i}" data-o="${o}">${INFO[o][0]}</button>`).join('')}</div><div class="feedback" id="fb${i}"></div></div></div>`).join('');
+quiz.addEventListener('click',e=>{const b=e.target.closest('.choice'); if(!b) return; const i=+b.dataset.q; if(i in answered) return;
+  const right=Q[i][0], ok=b.dataset.o===right; answered[i]=ok;
+  quiz.querySelectorAll(`.choice[data-q="${i}"]`).forEach(x=>{if(x.dataset.o===right) x.dataset.state='right'; else if(x===b) x.dataset.state='wrong';});
+  document.getElementById('fb'+i).textContent=(ok?'정답! ':'정답은 '+INFO[right][0]+'. ')+INFO[right][1];
+  document.getElementById('score').textContent=Object.values(answered).filter(Boolean).length+' / '+Q.length;});
+// self-check
+const TODO=['모든 필렛이 오목한 산 모양이다','모든 다리의 윤곽이 보인다','표면이 매끈하고 거친 회색 납이 없다','옆 핀과 이어진 납(브리지)이 없다','뾰족한 뿔(고드름)이 없다','플럭스 잔여물을 닦았다','다리를 패드 위 적당한 길이로 잘랐다'];
+let saved={}; try{saved=JSON.parse(localStorage.getItem('fillet-todo')||'{}')}catch(e){}
+const todo=document.getElementById('todo');
+todo.innerHTML=TODO.map((t,i)=>`<label for="t${i}"><input type="checkbox" id="t${i}" ${saved[i]?'checked':''}><span>${t}</span></label>`).join('');
+todo.addEventListener('change',e=>{saved[e.target.id.slice(1)]=e.target.checked; try{localStorage.setItem('fillet-todo',JSON.stringify(saved))}catch(err){}});
+</script>
+
+</body></html>

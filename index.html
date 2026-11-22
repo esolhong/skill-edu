@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>숙련기술 실습 교실</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* 목차: 과정(트랙) 두 갈래, 각 과정은 순서가 있는 편 목록 */
+:root{--bg:#eef0ee;--panel:#f9faf9;--fg:#1d2422;--muted:#5b6662;--line:#c9cfcc;--accent:#d9a400;--accent-ink:#2a2200;--done:#1f8a4c;
+  --f:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--m:"JetBrains Mono",ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#151a19;--panel:#1d2423;--fg:#e6ebe8;--muted:#9aa7a2;--line:#34403d;--accent:#f2c230;--accent-ink:#1a1500;--done:#4cc27e;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-size:16px;line-height:1.65;padding:32px max(16px,env(safe-area-inset-left,0px)) 64px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2{margin:0;line-height:1.3;text-wrap:balance} h1{font-size:clamp(28px,5vw,40px)} h2{font-size:22px}
+p{margin:0}.muted{color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px}
+.track{display:flex;flex-direction:column;gap:12px;min-width:0}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+li a,li .soon{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;color:inherit;text-decoration:none}
+li a:hover,li a:focus-visible{border-color:var(--fg);outline:none}
+li .soon{opacity:.6}
+.no{font-family:var(--m);font-weight:700;color:var(--muted)}
+.t b{display:block}.t span{font-size:14px;color:var(--muted)}
+.st{font-size:12px;font-weight:700;padding:2px 8px;border-radius:3px;white-space:nowrap}
+.st.ok{background:var(--done);color:#fff}.st.wait{border:1px solid var(--line);color:var(--muted)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style></head><body>
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:10px">
+  <span class="eyebrow">고등학생 · 전기전자 숙련기술</span>
+  <h1>숙련기술 실습 교실</h1>
+  <p class="muted">편마다 이론 애니메이션, 실습, 웹 시뮬레이터, 확인 문제가 짝을 이룹니다. 영상의 QR을 찍으면 해당 편으로 바로 옵니다. 순서대로 공부하는 것을 권장합니다.</p>
+</header>
+
+<div class="tracks">
+  <section class="track" aria-labelledby="e-h">
+    <h2 id="e-h">전자 과정</h2>
+    <p class="muted">전자기능사·과정평가형 실기 대비</p>
+    <ol>
+      <li><span class="soon"><span class="no">E1</span><span class="t"><b>안전과 작업대</b><span>인두·ESD·환기</span></span><span class="st wait">준비 중</span></span></li>
+      <li><span class="soon"><span class="no">E2</span><span class="t"><b>부품 알아보기</b><span>저항 색띠, 극성 부품</span></span><span class="st wait">준비 중</span></span></li>
+      <li><a href="electronics/01-fillet/"><span class="no">E3</span><span class="t"><b>좋은 필렛 vs 불량 필렛</b><span>납땜 판정 기준, 불량 5가지</span></span><span class="st ok">공개</span></a></li>
+      <li><span class="soon"><span class="no">E4</span><span class="t"><b>납땜 실습: 스루홀에서 SMD까지</b><span>인두 사용, 칩 부품</span></span><span class="st wait">준비 중</span></span></li>
+      <li><span class="soon"><span class="no">E5</span><span class="t"><b>회로도와 PCB</b><span>KiCad 맛보기</span></span><span class="st wait">준비 중</span></span></li>
+      <li><span class="soon"><span class="no">E6</span><span class="t"><b>마이크로컨트롤러 맛보기</b><span>LED 깜빡이기부터</span></span><span class="st wait">준비 중</span></span></li>
+    </ol>
+  </section>
+  <section class="track" aria-labelledby="p-h">
+    <h2 id="p-h">전기 과정 (PLC·시퀀스)</h2>
+    <p class="muted">전기기능장·과정평가형 실기 대비</p>
+    <ol>
+      <li><a href="electrical/01-plc-com/"><span class="no">P1</span><span class="t"><b>PLC 입출력 COM 결선과 측정</b><span>입력 COM 24G, 출력 COM 전원, 허상전압</span></span><span class="st ok">공개</span></a></li>
+      <li><span class="soon"><span class="no">P2</span><span class="t"><b>다음 편 준비 중</b><span>주제는 선생님과 정해서 추가</span></span><span class="st wait">준비 중</span></span></li>
+    </ol>
+  </section>
+</div>
+
+<footer>실습 기종·전원 사양에 따라 수치가 다를 수 있으며, 실제 평가는 학교 평가 기준을 따릅니다.</footer>
+</div>
+</body></html>
