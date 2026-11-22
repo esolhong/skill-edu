@@ -54,7 +54,10 @@ header .lead{font-size:18px;color:var(--muted);max-width:64ch}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:700}
 .seg button:focus-visible,.btn:focus-visible,.tbtn:focus-visible,.hit:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.stage{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
+.meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.mcard{border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;background:var(--bg)}
+.mcard .verdict{background:var(--panel)}
+.unit{font-family:var(--f-mono);font-size:12px;background:var(--fg);color:var(--bg);padding:1px 6px;border-radius:3px;vertical-align:3px}
 @media (max-width:820px){.stage{grid-template-columns:minmax(0,1fr)}}
 .svgbox{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
 .svgbox svg{display:block;width:100%;min-width:720px;height:auto}
@@ -141,7 +144,7 @@ footer{color:var(--muted);font-size:13px}
   <div class="prose">
     <span class="eyebrow">결선 시뮬레이터</span>
     <h2 id="sim-h">스위치를 누르고, 테스트 포인트를 찍어 보세요</h2>
-    <p>배선 시뮬레이터의 PLC 연결부와 같은 결선·표기입니다. 처음 화면은 그 시뮬레이터의 최신 결선(입력 COM=24G, 출력 COM0~3=F1-2(L3), 램프 공통 PN=F1-1(L1))과 같습니다. 스위치를 눌러 측정한 뒤 <b>입력전원 바꾸기</b>, <b>출력전원 바꾸기</b>로 바꿔서 다시 재 보세요.</p>
+    <p>배선 시뮬레이터의 PLC 연결부와 같은 결선·표기입니다. 테스터는 입력용(DC V)과 출력용(AC V) 두 대입니다. 처음 화면은 그 시뮬레이터의 최신 결선(입력 COM=24G, 출력 COM0~3=F1-2(L3), 램프 공통 PN=F1-1(L1))과 같습니다. 스위치를 눌러 측정한 뒤 <b>입력전원 바꾸기</b>, <b>출력전원 바꾸기</b>로 바꿔서 다시 재 보세요.</p>
   </div>
   <div class="sim">
     <div class="toolbar">
@@ -150,30 +153,43 @@ footer{color:var(--muted);font-size:13px}
       <button class="tbtn" id="bOut" type="button">출력전원 바꾸기<small id="bOutS"></small></button>
       <button class="tbtn" id="bLbl" type="button">출력 표기 (PLC 기종)<small id="bLblS"></small></button>
     </div>
-    <div class="controls">
-      <div class="ctl"><span class="lbl">테스터 흑색(−) 위치</span>
-        <div class="seg" id="ref"><button data-v="24G" aria-pressed="true">PLC 24G</button><button data-v="COM" aria-pressed="false">입력 COM</button><button data-v="PN" aria-pressed="false">램프 공통 PN</button><button data-v="L3" aria-pressed="false">F1-2(L3)</button><button data-v="COM0" aria-pressed="false">출력 COM0</button></div></div>
-      <div class="ctl"><span class="lbl">테스터 종류</span>
-        <div class="seg" id="mtr"><button data-v="hiz" aria-pressed="true">일반 디지털 (10MΩ)</button><button data-v="loz" aria-pressed="false">LoZ (저임피던스)</button></div></div>
-    </div>
-    <div class="stage">
-      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
-        <div class="svgbox"><svg id="svg" viewBox="0 0 860 400" role="img" aria-label="PLC 입출력 결선도"></svg></div>
-        <p class="hint">스위치 클릭: ON/OFF · 동그란 테스트 포인트(I00, Q00…) 클릭: 적색 리드 이동 · 램프 클릭: 단선 만들기/복구 · 시험 프로그램: 입력 n번 → 출력 n번 (I00→Q00 … I04→Q04)</p>
+    <div class="svgbox"><svg id="svg" viewBox="0 0 860 400" role="img" aria-label="PLC 입출력 결선도"></svg></div>
+    <p class="hint">스위치 클릭: ON/OFF · 테스트 포인트 클릭: I00~I05는 입력 테스터, Q00~Q04는 출력 테스터의 적색 리드 이동 · 램프 클릭: 단선 만들기/복구 · 시험 프로그램: I00→Q00 … I04→Q04</p>
+    <div class="legend"><span style="--c:var(--p24)">24V 전위</span><span style="--c:var(--g24)">24G(0V) 전위</span><span style="--c:var(--live)">L1 전위</span><span style="--c:var(--neu)">L3 전위</span><span style="--c:var(--float)">떠 있는 선</span></div>
+    <div class="meters">
+      <div class="mcard">
+        <h3>테스터 1 · 입력 측정 <span class="unit">DC</span></h3>
+        <div class="controls">
+          <div class="ctl"><span class="lbl">측정 모드</span><div class="seg" id="inMode"><button data-v="DC" aria-pressed="true">DC V</button><button data-v="AC" aria-pressed="false">AC V</button></div></div>
+          <div class="ctl"><span class="lbl">흑색(−) 위치</span><div class="seg" id="inRef"><button data-v="24G" aria-pressed="true">PLC 24G</button><button data-v="COM" aria-pressed="false">입력 COM</button></div></div>
+        </div>
+        <div class="meter" aria-live="polite">
+          <div class="mode" id="inMm"></div>
+          <div class="lcd" id="inLcd">0.0<small>V</small></div>
+          <div class="probes" id="inPr"></div>
+          <div class="mode" id="inSt"></div>
+        </div>
+        <div class="verdict" id="vIn"></div>
+        <div class="verdict" id="vInM"></div>
       </div>
-      <div class="meter" aria-live="polite">
-        <div class="mode" id="mMode">DC V</div>
-        <div class="lcd" id="lcd">0.0<small>V</small></div>
-        <div class="probes"><span id="pRed"></span><span id="pBlk"></span></div>
-        <div class="mode" id="mState"></div>
+      <div class="mcard">
+        <h3>테스터 2 · 출력 측정 <span class="unit">AC</span></h3>
+        <div class="controls">
+          <div class="ctl"><span class="lbl">측정 모드</span><div class="seg" id="outMode"><button data-v="AC" aria-pressed="true">AC V</button><button data-v="DC" aria-pressed="false">DC V</button></div></div>
+          <div class="ctl"><span class="lbl">흑색(−) 위치</span><div class="seg" id="outRef"><button data-v="PN" aria-pressed="true">램프 공통 PN</button><button data-v="L3" aria-pressed="false">F1-2(L3)</button><button data-v="COM0" aria-pressed="false">출력 COM0</button></div></div>
+          <div class="ctl"><span class="lbl">테스터 종류</span><div class="seg" id="mtr"><button data-v="hiz" aria-pressed="true">일반 디지털</button><button data-v="loz" aria-pressed="false">LoZ</button></div></div>
+        </div>
+        <div class="meter" aria-live="polite">
+          <div class="mode" id="outMm"></div>
+          <div class="lcd" id="outLcd">0<small>V</small></div>
+          <div class="probes" id="outPr"></div>
+          <div class="mode" id="outSt"></div>
+        </div>
+        <div class="verdict" id="vOut"></div>
+        <div class="verdict" id="vOutM"></div>
       </div>
     </div>
-    <div class="legend"><span style="--c:var(--p24)">24V 전위</span><span style="--c:var(--g24)">24G(0V) 전위</span><span style="--c:var(--live)">L1 전위</span><span style="--c:var(--neu)">L3 전위 (측정 기준 0V)</span><span style="--c:var(--float)">떠 있는 선</span></div>
-    <div class="status">
-      <div class="verdict" id="vIn"></div>
-      <div class="verdict" id="vOut"></div>
-    </div>
-    <div class="verdict" id="vMeas"></div>
+    <p class="hint">입력(DC 24V)과 출력(AC 220V)은 포토커플러·릴레이로 서로 절연된 별개 회로입니다. 그래서 테스터도 회로마다 따로, 입력은 DC V, 출력은 AC V로 잽니다.</p>
   </div>
 </section>
 
@@ -181,14 +197,14 @@ footer{color:var(--muted);font-size:13px}
 <section aria-labelledby="tbl-h">
   <h2 id="tbl-h">측정값 한눈에 보기</h2>
   <div class="tbl"><table>
-    <thead><tr><th>결선</th><th>테스터 (적 / 흑)</th><th>OFF</th><th>ON</th><th>판정</th></tr></thead>
+    <thead><tr><th>결선</th><th>테스터 모드 · 적 / 흑</th><th>OFF</th><th>ON</th><th>판정</th></tr></thead>
     <tbody>
-      <tr><td>입력 COM=24G, 스위치 공통 24V</td><td>I00 / 24G</td><td class="num">0 V</td><td class="num">24 V</td><td>누르면 24V, 직관적 (권장)</td></tr>
-      <tr><td>입력 COM=24V, 스위치 공통 24G</td><td>I00 / 24G</td><td class="num">≈24 V</td><td class="num">0 V</td><td>동작은 정상, 측정은 거꾸로 읽힘</td></tr>
-      <tr><td>출력 COM=F1-1(L1), PN=F1-2(L3)</td><td>Q00 / PN(=L3)</td><td class="num">0 V</td><td class="num">220 V</td><td>ON이면 220V, 램프 고장도 바로 구분 (권장)</td></tr>
-      <tr><td>출력 COM=F1-2(L3), PN=F1-1(L1)</td><td>Q00 / F1-2(L3)</td><td class="num">220 V</td><td class="num">0 V</td><td>꺼져 있는데 220V, 오판하기 쉬움</td></tr>
-      <tr><td>출력 COM=F1-2(L3), PN=F1-1(L1)</td><td>Q00 / PN(=L1)</td><td class="num">0 V</td><td class="num">220 V</td><td>흑색을 PN에 두면 정상 판독</td></tr>
-      <tr><td>출력 OFF, 램프 단선</td><td>Q00 / PN, 일반 테스터</td><td class="num">수십 V</td><td class="num">COM 전위</td><td>OFF의 수십 V는 유도(허상)전압, LoZ로 사라짐</td></tr>
+      <tr><td>입력 COM=24G, 스위치 공통 24V</td><td>DC V · I00 / 24G</td><td class="num">0 V</td><td class="num">24 V</td><td>누르면 24V, 직관적 (권장)</td></tr>
+      <tr><td>입력 COM=24V, 스위치 공통 24G</td><td>DC V · I00 / 24G</td><td class="num">≈24 V</td><td class="num">0 V</td><td>동작은 정상, 측정은 거꾸로 읽힘</td></tr>
+      <tr><td>출력 COM=F1-1(L1), PN=F1-2(L3)</td><td>AC V · Q00 / PN(=L3)</td><td class="num">0 V</td><td class="num">220 V</td><td>ON이면 220V, 램프 고장도 바로 구분 (권장)</td></tr>
+      <tr><td>출력 COM=F1-2(L3), PN=F1-1(L1)</td><td>AC V · Q00 / F1-2(L3)</td><td class="num">220 V</td><td class="num">0 V</td><td>꺼져 있는데 220V, 오판하기 쉬움</td></tr>
+      <tr><td>출력 COM=F1-2(L3), PN=F1-1(L1)</td><td>AC V · Q00 / PN(=L1)</td><td class="num">0 V</td><td class="num">220 V</td><td>흑색을 PN에 두면 정상 판독</td></tr>
+      <tr><td>출력 OFF, 램프 단선</td><td>AC V · Q00 / PN, 일반 테스터</td><td class="num">수십 V</td><td class="num">COM 전위</td><td>OFF의 수십 V는 유도(허상)전압, LoZ로 사라짐</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -221,12 +237,12 @@ footer{color:var(--muted);font-size:13px}
     <fieldset><legend>2. 입력 결선과 측정</legend>
       <label><input type="checkbox" id="c4"><span>24G–COM 점퍼, 24V → 스위치 공통선 → SS_A~C, PB_A~C → I00~I05 로 결선했다</span></label>
       <label><input type="checkbox" id="c5"><span>전원 투입 전 저항 레인지로 24V–24G 사이가 단락이 아님을 확인했다</span></label>
-      <label><input type="checkbox" id="c6"><span>흑색 24G 고정, 적색 I00~I05: 스위치 OFF <span class="mono">0V</span>, ON <span class="mono">24V</span> 측정</span></label>
+      <label><input type="checkbox" id="c6"><span>테스터 <b>DC V</b> 모드, 흑색 24G 고정, 적색 I00~I05: 스위치 OFF <span class="mono">0V</span>, ON <span class="mono">24V</span> 측정</span></label>
       <label><input type="checkbox" id="c7"><span>입력 LED와 래더 모니터에서 해당 입력 ON을 확인했다</span></label>
     </fieldset>
     <fieldset><legend>3. 출력 결선과 측정</legend>
       <label><input type="checkbox" id="c8"><span>F1을 내린 뒤 COM0~COM3 점퍼 → F1-1(L1), Q00~Q04 → PL_A~E → 램프 공통 PN → F1-2(L3), FG → PE 결선</span></label>
-      <label><input type="checkbox" id="c9"><span>흑색 램프 공통 PN 고정, 적색 Q00~Q04: 출력 OFF <span class="mono">0V</span>, ON <span class="mono">220V</span> 측정 (한 손 측정)</span></label>
+      <label><input type="checkbox" id="c9"><span>테스터 <b>AC V</b> 모드, 흑색 램프 공통 PN 고정, 적색 Q00~Q04: 출력 OFF <span class="mono">0V</span>, ON <span class="mono">220V</span> 측정 (한 손 측정)</span></label>
       <label><input type="checkbox" id="c10"><span>220V가 나오는데 램프가 안 켜지면 램프·공통선을, 0V면 프로그램·출력 쪽을 점검한다</span></label>
     </fieldset>
     <fieldset class="rec"><legend>4. 비교 실험 기록 (교사 시연 권장)</legend>
@@ -253,7 +269,7 @@ footer{color:var(--muted);font-size:13px}
 (function(){
 const $=s=>document.querySelector(s);
 const C=n=>`var(--${n})`;
-const S={inCom:'24G', ssFirst:true, outCom:'L3', lbl:0, ref:'24G', mtr:'hiz', red:{side:'in',n:0},
+const S={inCom:'24G', ssFirst:true, outCom:'L3', lbl:0, inRef:'24G', outRef:'PN', inMode:'DC', outMode:'AC', mtr:'hiz', inRed:0, outRed:0,
   sw:{SS_A:false,SS_B:false,SS_C:false,PB_A:false,PB_B:false,PB_C:false}, lampOpen:[false,false,false,false,false]};
 const LBL=[{n:'I00/Q00 (IEC)',i:k=>'I0'+k,q:k=>'Q0'+k},{n:'P00/P40 (LS XGB)',i:k=>'P0'+k,q:k=>'P4'+k},{n:'X0/Y0 (미쓰비시)',i:k=>'X'+k,q:k=>'Y'+k}];
 const ROWY=[134,161,188,215,242,269], QY=[215,242,269,296,323];
@@ -337,16 +353,17 @@ function draw(){
     g+=`<rect class="hit" tabindex="0" role="button" aria-label="PL_${'ABCDE'[k]} 단선 전환" data-lamp="${k}" x="668" y="${y-13}" width="28" height="26"/>`;
     g+=`<text class="tl" x="620" y="${y-11}" text-anchor="middle" fill="${C('g24')}">${L.q(k)}</text><circle class="tp hov" cx="620" cy="${y}" r="8"/>`;
     g+=`<rect class="hit" tabindex="0" role="button" aria-label="${L.q(k)} 측정" data-tp="out-${k}" x="608" y="${y-12}" width="24" height="24"/>`;
-    if(fl && S.mtr==='hiz' && S.red.side==='out' && S.red.n===k) g+=`<path d="M560,${y-6} q5,-7 10,0 q5,7 10,0 q5,-7 10,0" fill="none" stroke="${C('accent')}" stroke-width="1.6"/>`;
+    if(fl && S.mtr==='hiz' && S.outMode==='AC' && S.outRed===k) g+=`<path d="M560,${y-6} q5,-7 10,0 q5,7 10,0 q5,-7 10,0" fill="none" stroke="${C('accent')}" stroke-width="1.6"/>`;
     if(lit) g+=`<path class="flow" d="M560,${y<200?107:188} V${y} H745"/>`;
   });
   if(P.lit.some(x=>x)) g+=`<path class="flow" d="M595,24 V107 H560 M745,24 V323"/>`;
   g+=`<path class="w" d="M540,350 H625" stroke="${C('pe')}"/><circle class="tp" cx="633" cy="350" r="8"/><text class="tl" x="647" y="354" fill="${C('pe')}">PE (접지)</text>`;
   // ---- probes
-  const rp = S.red.side==='in' ? [205,ROWY[S.red.n]] : [620,QY[S.red.n]];
-  const bp = {'24G':[360,80],'COM':[360,107],'L3':S.outCom==='L1'?[745,42]:[595,40],'PN':[745,42],'COM0':[540,107]}[S.ref];
-  g+=`<circle cx="${rp[0]}" cy="${rp[1]}" r="13" fill="none" stroke="#e74c3c" stroke-width="3"/>`;
-  g+=`<circle cx="${bp[0]}" cy="${bp[1]}" r="13" fill="none" stroke="var(--fg)" stroke-width="2.5" stroke-dasharray="3 3"/>`;
+  const ring=(x,y,red,lab)=>`<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="${red?'#e74c3c':'var(--fg)'}" stroke-width="${red?3:2.5}" ${red?'':'stroke-dasharray="3 3"'}/><text class="ts" x="${x}" y="${y+24}" text-anchor="middle" font-weight="700">${lab}</text>`;
+  g+=ring(205,ROWY[S.inRed],true,'');
+  g+=ring(...({'24G':[360,80],'COM':[360,107]}[S.inRef]),false,'');
+  g+=ring(620,QY[S.outRed],true,'');
+  g+=ring(...({'L3':S.outCom==='L1'?[745,42]:[595,40],'PN':[745,42],'COM0':[540,107]}[S.outRef]),false,'');
   g+=`<text class="ts" x="30" y="392">퓨즈 F1-1(L1)·F1-2(L3) → PLC 전원 L·N, 출력 COM, 램프 공통 PN · F2(L1·L3) → 시퀀스 220</text>`;
   $('#svg').innerHTML=g;
   meter(P,L); verdicts(P,L);
@@ -355,77 +372,73 @@ function draw(){
   $('#bOutS').textContent='지금: 출력 COM='+(S.outCom==='L1'?'F1-1(L1) (권장)':'F1-2(L3)');
   $('#bLblS').textContent='지금: '+L.n;
 }
-function refName(){return {'24G':'PLC 24G','COM':'입력 COM','PN':'램프 공통 PN ('+(S.outCom==='L1'?'F1-2(L3)':'F1-1(L1)')+')','L3':'F1-2(L3)','COM0':'출력 COM0'}[S.ref];}
+function refName(r){return {'24G':'PLC 24G','COM':'입력 COM','PN':'램프 공통 PN ('+(S.outCom==='L1'?'F1-2(L3)':'F1-1(L1)')+')','L3':'F1-2(L3)','COM0':'출력 COM0'}[r];}
+const dot=c=>`<i class="pr" style="background:${c};${c==='#111'?'border:1px solid #888':''}"></i>`;
 function meter(P,L){
-  const inSide=S.red.side==='in', k=S.red.n;
-  const refIn=S.ref==='24G'||S.ref==='COM';
-  $('#pRed').innerHTML=`<i class="pr" style="background:#e74c3c"></i>적색(+) → ${inSide?L.i(k):L.q(k)}`;
-  $('#pBlk').innerHTML=`<i class="pr" style="background:#111;border:1px solid #888"></i>흑색(−) → ${refName()}`;
-  let txt,unit='V';
-  if(inSide!==refIn){ txt='– – –'; $('#mMode').textContent='측정 불가'; }
-  else if(inSide){
-    $('#mMode').textContent='DC V · '+(S.mtr==='hiz'?'일반 디지털':'LoZ');
-    const r=P.vI[k]-(S.ref==='24G'?0:P.comV); txt=r.toFixed(1);
-  } else {
-    $('#mMode').textContent='AC V · '+(S.mtr==='hiz'?'일반 디지털 (10MΩ)':'LoZ (약 3kΩ)');
-    const v=P.vQ[k], ref=S.ref==='L3'?0:(S.ref==='PN'?P.lampBus:P.comA);
-    if(v===null) txt=S.mtr==='hiz'?String(ghost):'0.4'; else txt=String(Math.abs(v-ref));
-  }
-  $('#lcd').innerHTML=txt+'<small>'+unit+'</small>';
-  $('#mState').textContent = inSide ? `입력 LED ${L.i(k)}: ${P.ins[k]?'켜짐':'꺼짐'}` : `출력 ${L.q(k)}: ${P.outOn[k]?'ON':'OFF'} · PL_${'ABCDE'[k]}: ${P.lit[k]?'점등':(S.lampOpen[k]?'단선':'소등')}`;
+  const k=S.inRed, j=S.outRed;
+  // input meter (DC circuit)
+  $('#inMm').textContent=S.inMode+' V 모드';
+  $('#inPr').innerHTML=`<span>${dot('#e74c3c')}적색 → ${L.i(k)}</span><span>${dot('#111')}흑색 → ${refName(S.inRef)}</span>`;
+  const rin=P.vI[k]-(S.inRef==='24G'?0:P.comV);
+  $('#inLcd').innerHTML=(S.inMode==='DC'?rin.toFixed(1):'0.0')+'<small>V'+(S.inMode==='AC'?'~':'')+'</small>';
+  $('#inSt').textContent=`입력 LED ${L.i(k)}: ${P.ins[k]?'켜짐':'꺼짐'}`;
+  // output meter (AC circuit)
+  $('#outMm').textContent=S.outMode+' V 모드 · '+(S.mtr==='hiz'?'일반 디지털 (10MΩ)':'LoZ (약 3kΩ)');
+  $('#outPr').innerHTML=`<span>${dot('#e74c3c')}적색 → ${L.q(j)}</span><span>${dot('#111')}흑색 → ${refName(S.outRef)}</span>`;
+  const v=P.vQ[j], ref=S.outRef==='L3'?0:(S.outRef==='PN'?P.lampBus:P.comA);
+  let txt = v===null ? (S.mtr==='hiz'?String(ghost):'0.4') : String(Math.abs(v-ref));
+  if(S.outMode==='DC') txt = (v!==null && Math.abs(v-ref)>0) ? '0.3' : '0.0';
+  $('#outLcd').innerHTML=txt+'<small>V'+(S.outMode==='AC'?'~':'')+'</small>';
+  $('#outSt').textContent=`출력 ${L.q(j)}: ${P.outOn[j]?'ON':'OFF'} · PL_${'ABCDE'[j]}: ${P.lit[j]?'점등':(S.lampOpen[j]?'단선':'소등')}`;
 }
 function setV(id,cls,t,b){const v=$(id);v.className='verdict '+cls;v.innerHTML=`<b>${t}</b>${b}`;}
 function verdicts(P,L){
-  if(S.inCom==='24G') setV('#vIn','good','입력: COM=24G, 스위치 공통선=24V','스위치를 누르면 I 단자로 24V가 들어옵니다. 흑색 24G 고정으로 OFF 0V, ON 24V.');
-  else setV('#vIn','warn','입력: COM=24V, 스위치 공통선=24G','동작은 정상이지만 OFF인 I 단자에 포토커플러를 거쳐 온 24V가 보이고, 누르면 0V가 됩니다. 거꾸로 읽어야 합니다.');
-  if(S.outCom==='L1') setV('#vOut','good','출력: COM0~3=F1-1(L1), 램프 공통 PN=F1-2(L3)','PLC 전원 L측이 COM으로 들어가 ON 때 Q 단자로 220V가 나갑니다. 흑색을 PN(=F1-2, N측)에 두면 ON 220V, OFF 0V. 기준점이 PN과 F1-2 하나뿐이라 헷갈리지 않습니다.');
-  else setV('#vOut','warn','출력: COM0~3=F1-2(L3), 램프 공통 PN=F1-1(L1)','흑색을 PN(L1)에 두면 정상으로 읽히지만, 습관대로 N측인 F1-2(L3)에 두면 꺼져 있을 때 220V, 켜지면 0V로 거꾸로 보입니다. 단상 L–N 전원이었다면 램프가 꺼져도 소켓에 220V가 남는 결선입니다.');
-  const inSide=S.red.side==='in', k=S.red.n, refIn=S.ref==='24G'||S.ref==='COM';
-  if(inSide!==refIn){ setV('#vMeas','bad','두 리드가 서로 다른 회로에 있습니다.','입력(DC 24V)과 출력(AC 220V)은 포토커플러와 릴레이로 서로 절연된 별개의 회로입니다. 두 회로 사이에는 기준점이 없으니 흑색 위치를 같은 회로로 옮기세요.'); return; }
-  if(inSide){
-    const on=P.ins[k], A=S.inCom==='24G';
-    if(A) setV('#vMeas','good',on?`누르니 24V. 전압이 ${L.i(k)}로 들어왔습니다.`:'안 누르면 0V.', S.ref==='24G'?'흑색 24G 고정, 적색으로 I 단자만 찍으면 "0V는 OFF, 24V는 ON". 입력 LED·래더 모니터와 일치합니다.':'COM=24G라서 흑색을 24G에 대든 COM에 대든 같은 값입니다. 기준점이 하나라 헷갈릴 일이 없습니다.');
-    else if(S.ref==='24G') setV('#vMeas','warn',on?'눌렀는데 0V입니다.':'안 눌렀는데 24V가 나옵니다.','COM의 24V가 포토커플러를 거쳐 I 단자까지 올라와 있기 때문입니다(테스터 내부저항이 매우 커서 거의 24V로 보임). 입력은 정상인데 측정값이 거꾸로라 초보자가 "스위치 불량"으로 오판하기 쉽습니다. "입력전원 바꾸기"를 눌러 보세요.');
-    else setV('#vMeas','warn',on?'−24V. 흑색을 COM(24V)에 대니 부호가 뒤집혔습니다.':'0V.','흑색을 COM으로 옮기면 크기는 맞지만 음수로 나옵니다. 측정 기준점을 매번 바꿔야 하는 결선입니다.');
+  if(S.inCom==='24G') setV('#vIn','good','결선: COM=24G, 스위치 공통선=24V','스위치를 누르면 I 단자로 24V가 들어옵니다. 흑색 24G 고정으로 OFF 0V, ON 24V.');
+  else setV('#vIn','warn','결선: COM=24V, 스위치 공통선=24G','동작은 정상이지만 OFF인 I 단자에 포토커플러를 거쳐 온 24V가 보이고, 누르면 0V가 됩니다. 거꾸로 읽어야 합니다.');
+  if(S.outCom==='L1') setV('#vOut','good','결선: COM0~3=F1-1(L1), 램프 공통 PN=F1-2(L3)','PLC 전원 L측이 COM으로 들어가 ON 때 Q 단자로 220V가 나갑니다. 흑색은 PN(=F1-2, N측).');
+  else setV('#vOut','warn','결선: COM0~3=F1-2(L3), 램프 공통 PN=F1-1(L1)','흑색을 PN(L1)에 두면 정상으로 읽히지만, 습관대로 N측인 F1-2(L3)에 두면 꺼져 있을 때 220V, 켜지면 0V로 거꾸로 보입니다.');
+  // input measurement
+  {const k=S.inRed,on=P.ins[k],A=S.inCom==='24G';
+  if(S.inMode==='AC') setV('#vInM','bad','AC V 모드로는 직류 24V가 0V 근처로 나옵니다.','입력은 DC 24V 회로입니다. 모드를 DC V로 바꾸세요. 모드를 잘못 두면 스위치를 눌러도 "전압 없음"으로 오판합니다.');
+  else if(A) setV('#vInM','good',on?`누르니 24V. 전압이 ${L.i(k)}로 들어왔습니다.`:'안 누르면 0V.', S.inRef==='24G'?'흑색 24G 고정, 적색으로 I 단자만 찍으면 "0V는 OFF, 24V는 ON". 입력 LED·래더 모니터와 일치합니다.':'COM=24G라서 흑색을 24G에 대든 COM에 대든 같은 값입니다.');
+  else if(S.inRef==='24G') setV('#vInM','warn',on?'눌렀는데 0V입니다.':'안 눌렀는데 24V가 나옵니다.','COM의 24V가 포토커플러를 거쳐 I 단자까지 올라와 있기 때문입니다. 입력은 정상인데 측정값이 거꾸로라 "스위치 불량"으로 오판하기 쉽습니다. "입력전원 바꾸기"를 눌러 보세요.');
+  else setV('#vInM','warn',on?'−24V. 흑색을 COM(24V)에 대니 부호가 뒤집혔습니다.':'0V.','흑색을 COM으로 옮기면 크기는 맞지만 음수로 나옵니다. 기준점을 매번 바꿔야 하는 결선입니다.');}
+  // output measurement
+  {const k=S.outRed,on=P.outOn[k],open=S.lampOpen[k],A=S.outCom==='L1',hiz=S.mtr==='hiz',nm=L.q(k);
+  if(S.outMode==='DC'){ setV('#vOutM','bad','DC V 모드로는 교류 220V가 0V 근처로 나옵니다.','교류는 평균이 0이라 DC 모드에서는 0V 근처나 흔들리는 값만 보입니다. 출력이 ON인데 "안 나온다"고 오판합니다. 모드를 AC V로 바꾸세요.'); return; }
+  if(S.outRef==='COM0'){ setV('#vOutM','warn','흑색을 출력 COM0에 대면 접점 양단 전압을 잽니다.','ON(접점 닫힘)이면 0V, OFF면 램프를 거쳐 220V. 결선과 관계없이 거꾸로 읽히므로 램프 점검은 흑색을 램프 공통 PN에 두고 합니다.'); return; }
+  const effL = S.outRef==='PN' || (S.outRef==='L3' && A);
+  const tail = (S.outRef==='PN' && !A) ? ' (이 결선에서 흑색을 F1-2(L3)로 옮기면 거꾸로 읽힙니다.)' : '';
+  if(effL){
+    if(on&&!open) setV('#vOutM','good',`${nm}에서 220V, 램프 점등.`,'COM에 걸어 둔 전원이 접점을 지나 Q 단자로 나갔습니다. "220V = 출력 ON"으로 그대로 읽힙니다.'+tail);
+    else if(on) setV('#vOutM','warn',`${nm}에 220V가 나오는데 램프가 안 켜집니다.`,'PLC 출력은 정상, 고장은 램프나 램프 공통선 쪽입니다. 측정 한 번으로 PLC 쪽인지 부하 쪽인지 갈라집니다.');
+    else if(!open) setV('#vOutM','good','OFF에서 0V.','접점이 열려 있고 램프 필라멘트가 Q 단자를 램프 공통 PN에 이어 주므로 0V입니다.'+tail);
+    else if(hiz) setV('#vOutM','warn',`OFF인데 ${ghost}V? 유도(허상)전압입니다.`,'램프가 끊겨 Q 단자~램프 선이 떠 있습니다. 같은 덕트의 220V 전선에서 정전용량으로 옮아온 전압을 입력저항이 큰 테스터가 그대로 보여 줍니다. 테스터를 LoZ로 바꿔 보세요.');
+    else setV('#vOutM','good','LoZ로 재니 0V 근처로 떨어집니다.','저임피던스 테스터는 수 kΩ 부하를 걸고 재므로 힘없는 유도전압은 사라집니다. 진짜 전압이면 LoZ로 재도 남습니다.');
   } else {
-    const on=P.outOn[k], open=S.lampOpen[k], A=S.outCom==='L1', hiz=S.mtr==='hiz', nm=L.q(k);
-    const effL = S.ref==='PN' || (S.ref==='L3' && S.outCom==='L1');
-    const tail = (S.ref==='PN' && !A) ? ' (이 결선에서 흑색을 F1-2(L3)로 옮기면 거꾸로 읽힙니다. 직접 바꿔 보세요.)' : '';
-    if(S.ref==='COM0'){ setV('#vMeas','warn','흑색을 출력 COM0에 대면 접점 양단 전압을 잽니다.','ON(접점 닫힘)이면 0V, OFF면 램프를 거쳐 220V가 보입니다. 결선 방향과 관계없이 거꾸로 읽히므로, 램프 점검은 흑색을 램프 공통(L3)에 두고 합니다.'); return; }
-    if(effL){
-      if(on&&!open) setV('#vMeas','good',`${nm}에서 220V, 램프 점등.`,'COM에 걸어 둔 전원이 접점을 지나 Q 단자로 나갔습니다. "220V = 출력 ON"으로 그대로 읽힙니다.'+tail);
-      else if(on) setV('#vMeas','warn',`${nm}에 220V가 나오는데 램프가 안 켜집니다.`,'PLC 출력은 정상, 고장은 램프나 램프 공통선 쪽입니다. 측정 한 번으로 PLC 쪽인지 부하 쪽인지 갈라집니다.');
-      else if(!open) setV('#vMeas','good','OFF에서 0V.','접점이 열려 있고 램프 필라멘트가 Q 단자를 램프 공통 PN에 이어 주므로 0V입니다.'+tail);
-      else if(hiz) setV('#vMeas','warn',`OFF인데 ${ghost}V? 이것이 유도(허상)전압입니다.`,'램프가 끊겨 Q 단자~램프 선이 어디에도 안 붙고 떠 있습니다. 같은 덕트의 220V 전선에서 정전용량으로 옮아온 전압을 입력저항이 큰 테스터가 그대로 보여 줍니다. 테스터 종류를 LoZ로 바꿔 보세요.');
-      else setV('#vMeas','good','LoZ로 재니 0V 근처로 떨어집니다.','저임피던스 테스터는 수 kΩ 부하를 걸고 재므로 힘없는 유도전압은 사라집니다. 진짜 전압이면 LoZ로 재도 남습니다.');
-    } else {
-      if(on&&!open) setV('#vMeas','warn','램프는 켜졌는데 0V입니다.','접점이 닫혀 Q 단자가 L3와 같아졌기 때문입니다. "출력 ON = 0V"로 거꾸로 읽어야 합니다.');
-      else if(on) setV('#vMeas','bad','0V, 램프도 안 켜집니다.','램프가 정상이어도 0V, 단선이어도 0V입니다. 이 결선에서는 Q 단자 측정만으로 램프 고장을 찾을 수 없습니다.');
-      else if(!open) setV('#vMeas','bad','램프가 꺼져 있는데 220V가 나옵니다.','램프 필라멘트를 거쳐 L1 전위가 Q 단자까지 와 있는 진짜 전압입니다(LoZ로 재도 남음). 학생은 "PLC 출력이 안 꺼진다"고 오판하기 쉽습니다.');
-      else if(hiz) setV('#vMeas','warn',`OFF, 램프 단선에서 ${ghost}V (유도전압).`,'정상 OFF는 220V, 단선 OFF는 수십 V, ON은 0V. 상황마다 숫자가 뒤죽박죽이라 램프 동작 점검이 어렵습니다.');
-      else setV('#vMeas','warn','LoZ에서는 0V 근처.','유도전압은 사라졌지만, 이 결선은 여전히 정상 OFF가 220V로 보입니다.');
-    }
-  }
+    if(on&&!open) setV('#vOutM','warn','램프는 켜졌는데 0V입니다.','접점이 닫혀 Q 단자가 F1-2(L3)와 같아졌기 때문입니다. "출력 ON = 0V"로 거꾸로 읽어야 합니다.');
+    else if(on) setV('#vOutM','bad','0V, 램프도 안 켜집니다.','램프가 정상이어도 0V, 단선이어도 0V입니다. 이렇게 재면 램프 고장을 찾을 수 없습니다.');
+    else if(!open) setV('#vOutM','bad','램프가 꺼져 있는데 220V가 나옵니다.','램프 필라멘트를 거쳐 L1 전위가 Q 단자까지 와 있는 진짜 전압입니다(LoZ로 재도 남음). "PLC 출력이 안 꺼진다"고 오판하기 쉽습니다.');
+    else if(hiz) setV('#vOutM','warn',`OFF, 램프 단선에서 ${ghost}V (유도전압).`,'정상 OFF는 220V, 단선 OFF는 수십 V, ON은 0V. 상황마다 숫자가 뒤죽박죽이라 램프 동작 점검이 어렵습니다.');
+    else setV('#vOutM','warn','LoZ에서는 0V 근처.','유도전압은 사라졌지만, 이렇게 재면 여전히 정상 OFF가 220V로 보입니다.');
+  }}
 }
 // events
 $('#svg').addEventListener('click',e=>{
   const t=e.target.closest('[data-sw],[data-tp],[data-lamp]'); if(!t) return;
   if(t.dataset.sw){S.sw[t.dataset.sw]=!S.sw[t.dataset.sw];}
-  else if(t.dataset.lamp){const k=+t.dataset.lamp;S.lampOpen[k]=!S.lampOpen[k];S.red={side:'out',n:k};if(S.ref==='24G'||S.ref==='COM')setRef('PN');}
-  else { const [side,n]=t.dataset.tp.split('-'); S.red={side,n:+n};
-    const refIn=S.ref==='24G'||S.ref==='COM'; if(side==='in'&&!refIn)setRef('24G'); if(side==='out'&&refIn)setRef('PN'); }
+  else if(t.dataset.lamp){const k=+t.dataset.lamp;S.lampOpen[k]=!S.lampOpen[k];S.outRed=k;}
+  else { const [side,n]=t.dataset.tp.split('-'); if(side==='in')S.inRed=+n; else S.outRed=+n; }
   draw();
 });
 $('#svg').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('hit')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
-function setRef(v){S.ref=v;[...$('#ref').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));}
-$('#ref').addEventListener('click',e=>{const b=e.target.closest('button');if(b){setRef(b.dataset.v);draw();}});
-$('#mtr').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mtr=b.dataset.v;[...$('#mtr').children].forEach(x=>x.setAttribute('aria-pressed',x===b));draw();});
+['inMode','inRef','outMode','outRef','mtr'].forEach(id=>$('#'+id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S[id]=b.dataset.v;[...$('#'+id).children].forEach(x=>x.setAttribute('aria-pressed',x===b));draw();}));
 $('#bIn').onclick=()=>{S.inCom=S.inCom==='24V'?'24G':'24V';draw();};
 $('#bOrd').onclick=()=>{S.ssFirst=!S.ssFirst;draw();};
 $('#bOut').onclick=()=>{S.outCom=S.outCom==='L1'?'L3':'L1';draw();};
 $('#bLbl').onclick=()=>{S.lbl=(S.lbl+1)%LBL.length;draw();};
 draw();
-setInterval(()=>{const P=pot();if(S.red.side==='out'&&P.vQ[S.red.n]===null&&S.mtr==='hiz'&&S.ref!=='COM0'){ghost=52+Math.round(Math.random()*12);draw();}},1200);
+setInterval(()=>{const P=pot();if(P.vQ[S.outRed]===null&&S.mtr==='hiz'&&S.outMode==='AC'&&S.outRef!=='COM0'){ghost=52+Math.round(Math.random()*12);draw();}},1200);
 
 // checklist
 const KEY='plc-com-check-v2'; let saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
